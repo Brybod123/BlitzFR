@@ -10,7 +10,22 @@ const fileExplorer = document.getElementById('file-explorer');
 const fileList = document.getElementById('file-list');
 const btnNewFile = document.getElementById('btn-new-file');
 
-let chatMessages = [{ role: 'system', content: 'You are an advanced AI coding assistant in the Blitz IDE.' }];
+let chatMessages = [
+    { 
+        role: 'system', 
+        content: `You are an advanced AI coding assistant in the Blitz IDE. 
+You can manipulate files using special tags. Use them only when necessary.
+
+TOOLS:
+1. To read a file: <read_file path="filename"/>
+2. To create/overwrite a file: <write_file path="filename">content</write_file>
+3. To edit a file via search/replace: <edit_file path="filename"><search>exact_text_to_find</search><replace>new_text</replace></edit_file>
+4. To delete a file: <delete_file path="filename"/>
+
+When editing, the <search> block must exactly match the text in the file.
+You can use multiple tags in one response. Always explain what you are doing.` 
+    }
+];
 
 // Define initial contents
 const initialHtml = `<div class="main-container">
@@ -236,6 +251,44 @@ btnFileExplorer.addEventListener('click', () => {
     setTimeout(() => editor.layout(), 0);
 });
 
+// Helper for AI File Editing
+function applyFileEdit(filename, search, replace) {
+    if (!files[filename]) return `Error: File ${filename} not found.`;
+    const model = files[filename].model;
+    const content = model.getValue();
+    
+    if (!content.includes(search)) {
+        return `Error: Search string not found in ${filename}.`;
+    }
+    
+    const newContent = content.replace(search, replace);
+    model.setValue(newContent);
+    updatePreview();
+    return `Successfully updated ${filename}.`;
+}
+
+function aiCreateFile(filename, content) {
+    let ext = filename.split('.').pop().toLowerCase();
+    let lang = 'plaintext';
+    if (ext === 'html') lang = 'html';
+    else if (ext === 'css') lang = 'css';
+    else if (ext === 'js') lang = 'javascript';
+    else if (ext === 'py') lang = 'python';
+
+    if (files[filename]) {
+        files[filename].model.setValue(content);
+    } else {
+        files[filename] = {
+            model: monaco.editor.createModel(content, lang),
+            lang: lang
+        };
+        bindContentChange(files[filename].model);
+    }
+    openFile(filename);
+    updatePreview();
+    return `File ${filename} created/updated.`;
+}
+
 // Main UI Toggles (Code vs AI)
 toggleBtns.forEach(btn => {
     btn.addEventListener('click', () => {
@@ -296,10 +349,18 @@ generateBtn.addEventListener('click', async () => {
     generateBtn.disabled = true;
     const bubble = aiMsg.querySelector('.chat-bubble');
 
+    // Inject current file context into the request
+    const fileContext = Object.keys(files).map(f => `- ${f}`).join('\n');
+    const tempMessages = [
+        ...chatMessages.slice(0, 1),
+        { role: 'system', content: `Current files in project:\n${fileContext}\nProject context: This is a web project. index.html is the entry point.`},
+        ...chatMessages.slice(1)
+    ];
+
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
-            body: JSON.stringify({ messages: chatMessages })
+            body: JSON.stringify({ messages: tempMessages })
         });
 
         if (!response.ok) {
@@ -331,12 +392,13 @@ generateBtn.addEventListener('click', async () => {
                             bubble.textContent = aiContent;
                             chatHistory.scrollTop = chatHistory.scrollHeight;
                         }
-                    } catch (e) {
-                        // ignore malformed chunks
-                    }
+                    } catch (e) { }
                 }
             }
         }
+        
+        // Parse and Execute Tools
+        executeAiTools(aiContent);
         
         chatMessages.push({ role: 'assistant', content: aiContent });
     } catch (err) {
@@ -346,3 +408,33 @@ generateBtn.addEventListener('click', async () => {
 
     generateBtn.disabled = false;
 });
+
+function executeAiTools(content) {
+    // Read Files
+    const readMatches = content.matchAll(/<read_file path="([^"]+)"\/>/g);
+    for (const match of readMatches) {
+        const path = match[1];
+        if (files[path]) {
+            const fileData = files[path].model.getValue();
+            chatMessages.push({ role: 'system', content: `Content of ${path}:\n${fileData}` });
+        }
+    }
+
+    // Write Files
+    const writeMatches = content.matchAll(/<write_file path="([^"]+)">([\s\S]*?)<\/write_file>/g);
+    for (const match of writeMatches) {
+        aiCreateFile(match[1], match[2]);
+    }
+
+    // Edit Files (Search/Replace)
+    const editMatches = content.matchAll(/<edit_file path="([^"]+)">\s*<search>([\s\S]*?)<\/search>\s*<replace>([\s\S]*?)<\/replace>\s*<\/edit_file>/g);
+    for (const match of editMatches) {
+        applyFileEdit(match[1], match[2], match[3]);
+    }
+
+    // Delete Files
+    const deleteMatches = content.matchAll(/<delete_file path="([^"]+)"\/>/g);
+    for (const match of deleteMatches) {
+        if (files[match[1]]) deleteFile(match[1]);
+    }
+}
