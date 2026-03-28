@@ -1049,11 +1049,15 @@ async function captureThumbnail() {
     }
 }
 
+// Firebase RTDB keys can't contain ".", so we encode/decode
+function encodeKey(k) { return k.replace(/\./g, '_DOT_'); }
+function decodeKey(k) { return k.replace(/_DOT_/g, '.'); }
+
 // Serialize all files to a plain object for RTDB
 function serializeFiles() {
     const out = {};
     for (const [name, fileObj] of Object.entries(files)) {
-        out[name] = {
+        out[encodeKey(name)] = {
             content: fileObj.model.getValue(),
             lang: fileObj.lang
         };
@@ -1129,9 +1133,10 @@ async function loadProject(projectId) {
             delete files[name];
         }
 
-        // Load files from RTDB
+        // Load files from RTDB (decode keys back from _DOT_ to .)
         if (data.files) {
-            for (const [name, fileInfo] of Object.entries(data.files)) {
+            for (const [encodedName, fileInfo] of Object.entries(data.files)) {
+                const name = decodeKey(encodedName);
                 const lang = fileInfo.lang || 'plaintext';
                 files[name] = {
                     model: monaco.editor.createModel(fileInfo.content || "", lang, monaco.Uri.file(name)),
