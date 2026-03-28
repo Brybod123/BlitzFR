@@ -23,7 +23,7 @@
         </div>
 
         <div class="header-center">
-            <input type="text" class="search-bar" placeholder="Search projects or community... (Placeholder)">
+            <input type="text" class="search-bar" id="project-search" placeholder="Search projects or community...">
         </div>
 
         <div class="header-right">
@@ -242,6 +242,7 @@
         const createEntryTitle = document.getElementById('create-entry-title');
         const createEntryCopy = document.getElementById('create-entry-copy');
         const projectGrid = document.querySelector('.project-grid');
+        const projectSearch = document.getElementById('project-search');
         const sortProjects = document.getElementById('sort-projects');
         const gridViewBtn = document.getElementById('view-grid');
         const listViewBtn = document.getElementById('view-list');
@@ -378,7 +379,15 @@
             projectGrid.innerHTML = '';
             if (createCard) projectGrid.appendChild(createCard);
 
-            const projects = [...allProjects];
+            const query = projectSearch.value.trim().toLowerCase();
+            const projects = allProjects.filter(project => {
+                if (!query) return true;
+                const haystack = [
+                    project.name || '',
+                    project.forkedFrom?.name || ''
+                ].join(' ').toLowerCase();
+                return haystack.includes(query);
+            });
             if (sortProjects.value === 'name') {
                 projects.sort((a, b) => (a.name || 'Untitled').localeCompare(b.name || 'Untitled'));
             } else {
@@ -451,6 +460,7 @@
         document.querySelectorAll('.theme-option').forEach(btn => {
             btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
         });
+        projectSearch.addEventListener('input', renderProjects);
         sortProjects.addEventListener('change', renderProjects);
         gridViewBtn.addEventListener('click', () => applyDashboardView('grid'));
         listViewBtn.addEventListener('click', () => applyDashboardView('list'));
