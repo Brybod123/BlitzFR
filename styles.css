@@ -11,6 +11,10 @@ body {
     min-height: 100vh;
 }
 
+.hidden {
+    display: none !important;
+}
+
 /* ===== HOME PAGE ===== */
 body.home-page {
     display: flex;
@@ -173,6 +177,12 @@ body.editor-page {
     justify-content: space-between;
     align-items: center;
     flex-shrink: 0;
+}
+
+.header-utility-row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
 }
 
 .logo-sml {
@@ -1078,6 +1088,203 @@ body.editor-page {
 .icon-btn[disabled] {
     opacity: 0.3;
     cursor: not-allowed;
+}
+
+.account-menu {
+    position: relative;
+}
+
+.account-trigger {
+    width: 44px;
+    height: 44px;
+    border: 2px solid #30363d;
+    background: #0a0c10;
+    color: #00ffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    padding: 0;
+    clip-path: polygon(
+        0 4px, 4px 4px, 4px 0,
+        calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
+        100% calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) 100%,
+        4px 100%, 4px calc(100% - 4px), 0 calc(100% - 4px)
+    );
+}
+
+.account-trigger:hover {
+    border-color: #0088ff;
+    box-shadow: 0 0 16px rgba(0, 136, 255, 0.25);
+}
+
+.account-avatar,
+.account-avatar-fallback {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.account-avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0088ff, #00ffff);
+    color: #03111f;
+    font-family: 'VT323', monospace;
+    font-size: 1.4rem;
+}
+
+.account-avatar-fallback-lg {
+    width: 48px;
+    height: 48px;
+    border: 2px solid #30363d;
+}
+
+.account-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 300px;
+    padding: 16px;
+    background: #0a0c10;
+    border: 2px solid #0088ff;
+    box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35);
+    z-index: 40;
+    clip-path: polygon(
+        0 8px, 8px 8px, 8px 0,
+        calc(100% - 8px) 0, calc(100% - 8px) 8px, 100% 8px,
+        100% calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) 100%,
+        8px 100%, 8px calc(100% - 8px), 0 calc(100% - 8px)
+    );
+}
+
+.account-panel-head {
+    margin-bottom: 14px;
+}
+
+.account-id-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.account-name {
+    color: #ffffff;
+    font-family: 'VT323', monospace;
+    font-size: 1.4rem;
+}
+
+.account-email {
+    color: #7b8697;
+    font-size: 0.92rem;
+    overflow-wrap: anywhere;
+}
+
+.account-stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.account-stat-card {
+    background: #12161c;
+    border: 1px solid #30363d;
+    padding: 10px;
+}
+
+.account-stat-card strong {
+    color: #ffffff;
+    font-family: 'VT323', monospace;
+    font-size: 1.25rem;
+}
+
+.account-stat-label,
+.account-section-label {
+    display: block;
+    color: #8ab4ff;
+    font-family: 'VT323', monospace;
+    font-size: 0.95rem;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.account-theme-section {
+    margin-bottom: 14px;
+}
+
+.theme-switcher {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.theme-option,
+.account-action-btn {
+    border: 1px solid #30363d;
+    background: #12161c;
+    color: #c9d1d9;
+    padding: 9px 12px;
+    font-family: 'VT323', monospace;
+    font-size: 1rem;
+    cursor: pointer;
+}
+
+.theme-option.active {
+    border-color: #0088ff;
+    color: #00ffff;
+    box-shadow: inset 0 0 0 1px rgba(0, 136, 255, 0.25);
+}
+
+.account-action-btn {
+    width: 100%;
+}
+
+body[data-theme="light"] {
+    background: #e7edf6;
+    color: #475569;
+}
+
+body[data-theme="light"] .dashboard-header,
+body[data-theme="light"] .editor-side,
+body[data-theme="light"] .editor-main,
+body[data-theme="light"] .preview-side,
+body[data-theme="light"] .toggle-group,
+body[data-theme="light"] .dashboard-select,
+body[data-theme="light"] .project-card,
+body[data-theme="light"] .search-bar,
+body[data-theme="light"] .view-toggles,
+body[data-theme="light"] .account-trigger,
+body[data-theme="light"] .account-panel,
+body[data-theme="light"] .account-stat-card,
+body[data-theme="light"] .theme-option,
+body[data-theme="light"] .account-action-btn {
+    background: #f8fbff;
+    color: #1e293b;
+    border-color: #9ab7d9;
+}
+
+body[data-theme="light"] .dashboard-toolbar h2,
+body[data-theme="light"] .project-info h3,
+body[data-theme="light"] .account-name,
+body[data-theme="light"] .account-stat-card strong {
+    color: #0f172a;
+}
+
+body[data-theme="light"] .btn-create,
+body[data-theme="light"] .icon-btn,
+body[data-theme="light"] .create-new-card h3 {
+    color: #0369a1;
+    border-color: #7fb3e6;
+    text-shadow: none;
+}
+
+body[data-theme="light"] .create-new-card,
+body[data-theme="light"] .project-preview,
+body[data-theme="light"] .project-preview.skeleton {
+    background: #eef5ff;
 }
 
 .dashboard-main {

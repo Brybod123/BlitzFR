@@ -35,13 +35,51 @@
                 </div>
                 
                 <div style="flex: 1; display: flex; justify-content: flex-end;">
-                    <div class="toggle-group main-toggles">
-                        <button class="toggle-btn active" data-mode="code" title="Code">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
-                        </button>
-                        <button class="toggle-btn" data-mode="ai" title="AI Chat">
-                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-                        </button>
+                    <div class="header-utility-row">
+                        <div class="toggle-group main-toggles">
+                            <button class="toggle-btn active" data-mode="code" title="Code">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                            </button>
+                            <button class="toggle-btn" data-mode="ai" title="AI Chat">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                            </button>
+                        </div>
+                        <div class="account-menu">
+                            <button class="account-trigger" id="account-trigger" title="Account Menu">
+                                <img id="account-avatar" class="account-avatar hidden" alt="Profile">
+                                <span id="account-avatar-fallback" class="account-avatar-fallback">?</span>
+                            </button>
+                            <div class="account-panel hidden" id="account-panel">
+                                <div class="account-panel-head">
+                                    <div class="account-id-row">
+                                        <img id="account-panel-avatar" class="account-avatar hidden" alt="Profile">
+                                        <span id="account-panel-fallback" class="account-avatar-fallback account-avatar-fallback-lg">?</span>
+                                        <div>
+                                            <div class="account-name" id="account-name">Guest</div>
+                                            <div class="account-email" id="account-email">Not signed in</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="account-stat-grid">
+                                    <div class="account-stat-card">
+                                        <span class="account-stat-label">Hourly Budget</span>
+                                        <strong id="account-hourly-budget">$0.03</strong>
+                                    </div>
+                                    <div class="account-stat-card">
+                                        <span class="account-stat-label">Used This Hour</span>
+                                        <strong id="account-hourly-used">$0.00</strong>
+                                    </div>
+                                </div>
+                                <div class="account-theme-section">
+                                    <span class="account-section-label">Theme</span>
+                                    <div class="theme-switcher">
+                                        <button class="theme-option active" data-theme="dark">Blitz</button>
+                                        <button class="theme-option" data-theme="light">Light</button>
+                                    </div>
+                                </div>
+                                <button class="account-action-btn hidden" id="account-sign-out">Sign Out</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -163,7 +201,7 @@
     </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
         import { getDatabase, ref, set, get, push } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
@@ -183,10 +221,22 @@
         const auth = getAuth(app);
         const googleProvider = new GoogleAuthProvider();
         const db = getDatabase(app);
+        const accountTrigger = document.getElementById('account-trigger');
+        const accountPanel = document.getElementById('account-panel');
+        const avatar = document.getElementById('account-avatar');
+        const avatarFallback = document.getElementById('account-avatar-fallback');
+        const panelAvatar = document.getElementById('account-panel-avatar');
+        const panelFallback = document.getElementById('account-panel-fallback');
+        const accountName = document.getElementById('account-name');
+        const accountEmail = document.getElementById('account-email');
+        const accountBudget = document.getElementById('account-hourly-budget');
+        const accountUsed = document.getElementById('account-hourly-used');
+        const signOutBtn = document.getElementById('account-sign-out');
 
         // Expose Firebase RTDB tools globally so editor.js (non-module) can use them
         window.firebaseAuth = auth;
         window.firebaseSignIn = async () => signInWithPopup(auth, googleProvider);
+        window.firebaseSignOut = async () => signOut(auth);
         window.firebaseDB = db;
         window.firebaseRef = ref;
         window.firebaseSet = set;
@@ -200,12 +250,86 @@
                 window.firebaseUser = user;
                 window.firebaseAuthReady = true;
                 window.dispatchEvent(new Event('firebase-auth-ready'));
-                return;
+            } else {
+                window.firebaseUser = null;
+                window.firebaseAuthReady = false;
             }
-
-            window.firebaseUser = null;
-            window.firebaseAuthReady = false;
+            renderAccount(user);
         });
+
+        function getHourlyUsage() {
+            const hourlyBudget = 0.03;
+            const state = JSON.parse(localStorage.getItem('blitz_hourly_limit') || '{}');
+            const estCost = parseFloat(localStorage.getItem('blitz_estimated_request_cost') || '0');
+            const isFresh = state.ts && (Date.now() - state.ts) <= 3600000;
+            const used = isFresh ? (state.count || 0) * estCost : 0;
+            return { hourlyBudget, used };
+        }
+
+        function refreshHourlyPanel() {
+            const usage = getHourlyUsage();
+            accountBudget.textContent = `$${usage.hourlyBudget.toFixed(2)}`;
+            accountUsed.textContent = `$${usage.used.toFixed(4)}`;
+        }
+
+        function setAvatar(targetImg, targetFallback, user) {
+            const label = (user?.displayName || user?.email || 'Guest').trim();
+            const initial = label.charAt(0).toUpperCase() || '?';
+            if (user?.photoURL) {
+                targetImg.src = user.photoURL;
+                targetImg.classList.remove('hidden');
+                targetFallback.classList.add('hidden');
+            } else {
+                targetImg.classList.add('hidden');
+                targetFallback.textContent = initial;
+                targetFallback.classList.remove('hidden');
+            }
+        }
+
+        function applyTheme(theme) {
+            const nextTheme = theme === 'light' ? 'light' : 'dark';
+            document.body.dataset.theme = nextTheme;
+            localStorage.setItem('blitz_theme', nextTheme);
+            document.querySelectorAll('.theme-option').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.theme === nextTheme);
+            });
+            if (typeof window.blitzApplyTheme === 'function') {
+                window.blitzApplyTheme(nextTheme);
+            }
+        }
+
+        function renderAccount(user) {
+            accountName.textContent = user?.displayName || 'Guest';
+            accountEmail.textContent = user?.email || 'Not signed in';
+            signOutBtn.classList.toggle('hidden', !user);
+            setAvatar(avatar, avatarFallback, user);
+            setAvatar(panelAvatar, panelFallback, user);
+            refreshHourlyPanel();
+        }
+
+        accountTrigger.addEventListener('click', (event) => {
+            event.stopPropagation();
+            accountPanel.classList.toggle('hidden');
+            refreshHourlyPanel();
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!accountPanel.contains(event.target) && !accountTrigger.contains(event.target)) {
+                accountPanel.classList.add('hidden');
+            }
+        });
+
+        document.querySelectorAll('.theme-option').forEach(btn => {
+            btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+        });
+
+        signOutBtn.addEventListener('click', async () => {
+            await signOut(auth);
+            accountPanel.classList.add('hidden');
+            window.location.href = 'index.html';
+        });
+
+        applyTheme(localStorage.getItem('blitz_theme') || 'dark');
     </script>
 </body>
 </html>

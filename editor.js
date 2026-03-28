@@ -128,6 +128,18 @@ document.getElementById('btn-close-diff').addEventListener('click', () => {
     diffContainer.classList.add('hidden');
 });
 
+function applyEditorTheme(theme) {
+    const monacoTheme = theme === 'light' ? 'vs' : 'vs-dark';
+    monaco.editor.setTheme(monacoTheme);
+}
+
+window.blitzApplyTheme = (theme) => {
+    document.body.dataset.theme = theme === 'light' ? 'light' : 'dark';
+    applyEditorTheme(document.body.dataset.theme);
+};
+
+window.blitzApplyTheme(localStorage.getItem('blitz_theme') || 'dark');
+
 function renderMarkdownSafe(text) {
     const rawHtml = marked.parse(text || "");
     if (window.DOMPurify) {
@@ -940,6 +952,7 @@ async function updateModelStats() {
 function calculateEstimatedCost(modelId) {
     const pricePerToken = parseFloat(modelPrices[modelId]) || 0;
     const estCost = formatSigDigit(avgTokens * pricePerToken);
+    localStorage.setItem('blitz_estimated_request_cost', estCost);
     console.log(`Calculating cost for ${modelId}: ${avgTokens.toFixed(0)} avg tokens * ${pricePerToken.toFixed(9)} price = $${estCost}`);
     document.getElementById('avg-cost-val').textContent = `$${estCost}`;
 
