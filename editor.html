@@ -115,11 +115,16 @@
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                             </div>
                             <div class="model-dropdown-list hidden" id="model-dropdown-list">
-                                <div class="model-option" data-value="qwen/qwen-2.5-72b-instruct" data-name="Qwen 3.5 Flash">Qwen 3.5 Flash (current)</div>
-                                <div class="model-option" data-value="inception/mercury-2" data-name="Mercury 2">Mercury 2</div>
-                                <div class="model-option" data-value="xiaomi/mimo-v2-omni" data-name="Mimo v2 Omni">Mimo v2 Omni</div>
-                                <div class="model-option" data-value="openai/gpt-5.4-nano" data-name="GPT 5.4 Nano">GPT 5.4 Nano</div>
+                                <div class="model-filters" id="model-filters" style="display:flex; gap:5px; padding: 5px; border-bottom: 1px solid #2d3748; margin-bottom: 5px;">
+                                    <button class="filter-btn active" data-sort="cost" style="flex:1; font-size:10px; padding:4px; background:#2d3748; color:#fff; border:none; border-radius:3px; cursor:pointer;">Cost</button>
+                                    <button class="filter-btn" data-sort="speed" style="flex:1; font-size:10px; padding:4px; background:transparent; color:#a0aec0; border:none; border-radius:3px; cursor:pointer;">Speed</button>
+                                    <button class="filter-btn" data-sort="performance" style="flex:1; font-size:10px; padding:4px; background:transparent; color:#a0aec0; border:none; border-radius:3px; cursor:pointer;">Perform</button>
+                                </div>
+                                <div id="model-list-items">
+                                    <!-- Dynamic items go here -->
+                                </div>
                             </div>
+
                         </div>
                         <div class="cost-estimate-label" id="cost-estimate-label">
                             Avg. cost per request: <span id="avg-cost-val">Calculating...</span>

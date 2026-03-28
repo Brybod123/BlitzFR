@@ -697,39 +697,81 @@ async function updateModelStats() {
         calculateEstimatedCost(currentModelId);
 
         // Re-render dropdown list options with costs
-        const list = document.getElementById('model-dropdown-list');
-        list.innerHTML = '';
+        const listContainer = document.getElementById('model-list-items');
 
         const models = [
-            { id: "qwen/qwen3.5-flash-02-23", name: "Qwen 3.5 Flash" },
-            { id: "inception/mercury-2", name: "Mercury 2" },
-            { id: "xiaomi/mimo-v2-omni", name: "Mimo v2 Omni" },
-            { id: "openai/gpt-5.4-nano", name: "GPT 5.4 Nano" },
-            { id: "moonshotai/kimi-k2.5", name: "Kimi K2.5" },
-            { id: "kwaipilot/kat-coder-pro-v2", name: "KAT Coder Pro" },
-            { id: "x-ai/grok-code-fast-1", name: "Grok-Code Fast" },
-            { id: "google/gemini-3.1-flash-lite-preview", name: "Gemini 3.1 Flash Lite" },
-            { id: "xiaomi/mimo-v2-flash", name: "Mimo v2 Flash" }
+            { id: "qwen/qwen3.5-flash-02-23", name: "Qwen 3.5 Flash", type: "speed" },
+            { id: "inception/mercury-2", name: "Mercury 2", type: "cost" },
+            { id: "xiaomi/mimo-v2-omni", name: "Mimo v2 Omni", type: "performance" },
+            { id: "openai/gpt-5.4-nano", name: "GPT 5.4 Nano", type: "speed" },
+            { id: "moonshotai/kimi-k2.5", name: "Kimi K2.5", type: "performance" },
+            { id: "kwaipilot/kat-coder-pro-v2", name: "KAT Coder Pro", type: "performance" },
+            { id: "x-ai/grok-code-fast-1", name: "Grok-Code Fast", type: "speed" },
+            { id: "google/gemini-3.1-flash-lite-preview", name: "Gemini 3.1 Flash Lite", type: "speed" },
+            { id: "xiaomi/mimo-v2-flash", name: "Mimo v2 Flash", type: "speed" }
         ];
 
+        models.forEach(m => m.price = parseFloat(modelPrices[m.id]) || 0);
 
-        models.forEach(m => {
-            const price = parseFloat(modelPrices[m.id]) || 0;
-            const cost = formatSigDigit(avgTokens * price);
-            const opt = document.createElement('div');
-            opt.className = 'model-option';
-            opt.dataset.value = m.id;
-            opt.dataset.name = m.name;
-            opt.innerHTML = `${m.name} <span style="opacity: 0.5; margin-left: auto;">~$${cost}/req</span>`;
+        let currentFilter = 'cost';
 
-            opt.addEventListener('click', () => {
-                dropdownTrigger.dataset.value = m.id;
-                modelNameSpan.textContent = m.name;
-                dropdownList.classList.add('hidden');
-                calculateEstimatedCost(m.id);
+        const renderModels = () => {
+            if (!listContainer) return;
+            listContainer.innerHTML = '';
+            
+            let sortedModels = [...models];
+            if (currentFilter === 'cost') {
+                sortedModels.sort((a, b) => a.price - b.price);
+            } else if (currentFilter === 'performance') {
+                sortedModels.sort((a, b) => b.price - a.price); // higher price roughly maps to larger context/better intelligence
+            } else if (currentFilter === 'speed') {
+                // Prioritize designated high-speed models, then by lowest price acting as a proxy for speed
+                sortedModels.sort((a, b) => {
+                    if (a.type === 'speed' && b.type !== 'speed') return -1;
+                    if (b.type === 'speed' && a.type !== 'speed') return 1;
+                    return a.price - b.price;
+                });
+            }
+
+            sortedModels.forEach(m => {
+                const cost = formatSigDigit(avgTokens * m.price);
+                const opt = document.createElement('div');
+                opt.className = 'model-option';
+                opt.dataset.value = m.id;
+                opt.dataset.name = m.name;
+                opt.innerHTML = `${m.name} <span style="opacity: 0.5; margin-left: auto;">~$${cost}/req</span>`;
+
+                opt.addEventListener('click', () => {
+                    dropdownTrigger.dataset.value = m.id;
+                    modelNameSpan.textContent = m.name;
+                    dropdownList.classList.add('hidden');
+                    calculateEstimatedCost(m.id);
+                });
+                listContainer.appendChild(opt);
             });
-            list.appendChild(opt);
+        };
+
+        const filterBtns = document.querySelectorAll('.filter-btn');
+        filterBtns.forEach(btn => {
+            // Remove old listeners to avoid duplicates on re-render
+            const newBtn = btn.cloneNode(true);
+            btn.parentNode.replaceChild(newBtn, btn);
+            newBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                document.querySelectorAll('.filter-btn').forEach(b => {
+                    b.classList.remove('active');
+                    b.style.background = 'transparent';
+                    b.style.color = '#a0aec0';
+                });
+                newBtn.classList.add('active');
+                newBtn.style.background = '#2d3748';
+                newBtn.style.color = '#fff';
+                currentFilter = newBtn.dataset.sort;
+                renderModels();
+            });
         });
+
+        renderModels();
 
     } catch (e) {
         console.error("Stats fetch failed", e);
