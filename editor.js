@@ -462,8 +462,8 @@ async function runChatLoop(bubble, turn = 1) {
 function updateAiMessageUI(bubble, content) {
     bubble.innerHTML = '';
     
-    // Updated regex including todo tools
-    const regex = /(<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)[^>]*\/>|<(write_file|edit_file|create_file|search_codebase)[^>]*>[\s\S]*?<\/(write_file|edit_file|create_file|search_codebase)>)|(<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)[^>]*$|<(write_file|edit_file|create_file|search_codebase)[^>]*>[\s\S]*?$)/g;
+    // Combined regex for XML-style and Kimi-style tools
+    const regex = /(<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)[^>]*\/>|<(write_file|edit_file|create_file|search_codebase)[^>]*>[\s\S]*?<\/(write_file|edit_file|create_file|search_codebase)>|<\|tool_call_begin\|> functions\.(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check):\d+ <\|tool_call_argument_begin\|> ([\s\S]*?) <\|tool_call_end\|>)|(<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)[^>]*$|<(write_file|edit_file|create_file|search_codebase)[^>]*>[\s\S]*?$|<\|tool_call_begin\|> functions\.(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check):\d+ <\|tool_call_argument_begin\|> [\s\S]*?$)/g;
     
     let lastIndex = 0;
     let match;
@@ -479,11 +479,36 @@ function updateAiMessageUI(bubble, content) {
         const fullMatch = match[0];
         const isComplete = !!match[1];
         
-        const typeMatch = fullMatch.match(/<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)/);
-        const type = typeMatch ? typeMatch[1] : "tool";
-        const pathMatch = fullMatch.match(/path="([^"]+)"/);
-        const taskMatch = fullMatch.match(/task="([^"]+)"/);
-        const path = pathMatch ? pathMatch[1] : (taskMatch ? taskMatch[1] : "");
+        let type, path, diffData = null;
+
+        if (fullMatch.includes('<|tool_call_begin|>')) {
+            // Kimi style
+            const typeM = fullMatch.match(/functions\.(\w+):/);
+            type = typeM ? typeM[1] : "tool";
+            const argM = fullMatch.match(/<\|tool_call_argument_begin\|> ([\s\S]*?)( <\|tool_call_end\|>|$)/);
+            if (argM) {
+                try {
+                    const args = JSON.parse(argM[1].trim());
+                    path = args.path || args.task || "";
+                    if (type === 'edit_file' && isComplete) {
+                        diffData = { path, search: args.search, replace: args.replace };
+                    }
+                } catch(e) { path = "item"; }
+            }
+        } else {
+            // XML style
+            const typeMatch = fullMatch.match(/<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)/);
+            type = typeMatch ? typeMatch[1] : "tool";
+            const pathMatch = fullMatch.match(/path="([^"]+)"/);
+            const taskMatch = fullMatch.match(/task="([^"]+)"/);
+            path = pathMatch ? pathMatch[1] : (taskMatch ? taskMatch[1] : "");
+            
+            if (type === 'edit_file' && isComplete) {
+                const sm = fullMatch.match(/<search>([\s\S]*?)<\/search>/);
+                const rm = fullMatch.match(/<replace>([\s\S]*?)<\/replace>/);
+                if (sm && rm) diffData = { path, search: sm[1], replace: rm[1] };
+            }
+        }
         
         const labelMap = {
             'read_file': 'Reading ',
@@ -511,15 +536,6 @@ function updateAiMessageUI(bubble, content) {
         };
 
         const label = isComplete ? (doneMap[type] + (path || "")) : (labelMap[type] + (path || ""));
-        
-        // Capture diff data for edit_file if complete
-        let diffData = null;
-        if (type === 'edit_file' && isComplete) {
-            const sm = fullMatch.match(/<search>([\s\S]*?)<\/search>/);
-            const rm = fullMatch.match(/<replace>([\s\S]*?)<\/replace>/);
-            if (sm && rm) diffData = { path, search: sm[1], replace: rm[1] };
-        }
-
         bubble.appendChild(createToolCard(label, isComplete, type, path, diffData));
         lastIndex = regex.lastIndex;
     }
@@ -720,6 +736,42 @@ function executeAiTools(content) {
         const taskName = match[1];
         const t = todos.find(item => item.task === taskName);
         if (t) t.done = true;
+    }
+
+    // Moonshot / Kimi style: <|tool_call_begin|> functions.name:0 <|tool_call_argument_begin|> {...} <|tool_call_end|>
+    const kimiMatches = content.matchAll(/<\|tool_call_begin\|> functions\.(\w+):\d+ <\|tool_call_argument_begin\|> ([\s\S]*?) <\|tool_call_end\|>/g);
+    for (const match of kimiMatches) {
+        const type = match[1];
+        let args = {};
+        try { args = JSON.parse(match[2].trim()); } catch(e) {}
+
+        if (type === 'read_file' && args.path && files[args.path]) {
+            chatMessages.push({ role: 'system', content: `Content of ${args.path}:\n${files[args.path].model.getValue()}` });
+            contextAdded = true;
+        } else if ((type === 'write_file' || type === 'create_file') && args.path) {
+            aiCreateFile(args.path, args.content || "");
+        } else if (type === 'edit_file' && args.path) {
+            applyFileEdit(args.path, args.search, args.replace);
+        } else if (type === 'delete_file' && args.path) {
+            if (files[args.path]) deleteFile(args.path);
+        } else if (type === 'todo_add' && args.task) {
+            todos.push({ task: args.task, done: false });
+        } else if (type === 'todo_check' && args.task) {
+            const t = todos.find(item => item.task === args.task);
+            if (t) t.done = true;
+        } else if (type === 'read_codebase') {
+            let codebaseData = "Current Codebase:\n";
+            for (const path in files) codebaseData += `\n--- FILE: ${path} ---\n${files[path].model.getValue()}\n`;
+            chatMessages.push({ role: 'system', content: codebaseData });
+            contextAdded = true;
+        } else if (type === 'search_codebase' && args.query) {
+            let results = `Search results for "${args.query}":\n`;
+            for (const path in files) {
+                if (files[path].model.getValue().includes(args.query)) results += `- Found in: ${path}\n`;
+            }
+            chatMessages.push({ role: 'system', content: results });
+            contextAdded = true;
+        }
     }
 
     // Read Codebase
