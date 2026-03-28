@@ -35,7 +35,9 @@ export default async (req, context) => {
                 "inception/mercury-2",
                 "xiaomi/mimo-v2-omni",
                 "openai/gpt-5.4-nano",
-                "moonshotai/kimi-k2.5"
+                "moonshotai/kimi-k2.5",
+                "kwaipilot/kat-coder-pro-v2",
+                "x-ai/grok-code-fast-1"
             ];
 
             activityData.data.forEach(item => {
@@ -64,7 +66,9 @@ export default async (req, context) => {
             "inception/mercury-2",
             "xiaomi/mimo-v2-omni",
             "openai/gpt-5.4-nano",
-            "moonshotai/kimi-k2.5"
+            "moonshotai/kimi-k2.5",
+            "kwaipilot/kat-coder-pro-v2",
+            "x-ai/grok-code-fast-1"
         ];
         
         const prices = {};
