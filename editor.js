@@ -455,8 +455,8 @@ async function runChatLoop(bubble, turn = 1) {
 function updateAiMessageUI(bubble, content) {
     bubble.innerHTML = '';
     
-    // Updated regex including codebase tools
-    const regex = /(<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase)[^>]*\/>|<(write_file|edit_file|create_file|search_codebase)[^>]*>[\s\S]*?<\/(write_file|edit_file|create_file|search_codebase)>)|(<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase)[^>]*$|<(write_file|edit_file|create_file|search_codebase)[^>]*>[\s\S]*?$)/g;
+    // Updated regex including todo tools
+    const regex = /(<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)[^>]*\/>|<(write_file|edit_file|create_file|search_codebase)[^>]*>[\s\S]*?<\/(write_file|edit_file|create_file|search_codebase)>)|(<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)[^>]*$|<(write_file|edit_file|create_file|search_codebase)[^>]*>[\s\S]*?$)/g;
     
     let lastIndex = 0;
     let match;
@@ -472,10 +472,11 @@ function updateAiMessageUI(bubble, content) {
         const fullMatch = match[0];
         const isComplete = !!match[1];
         
-        const typeMatch = fullMatch.match(/<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase)/);
+        const typeMatch = fullMatch.match(/<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)/);
         const type = typeMatch ? typeMatch[1] : "tool";
         const pathMatch = fullMatch.match(/path="([^"]+)"/);
-        const path = pathMatch ? pathMatch[1] : "";
+        const taskMatch = fullMatch.match(/task="([^"]+)"/);
+        const path = pathMatch ? pathMatch[1] : (taskMatch ? taskMatch[1] : "");
         
         const labelMap = {
             'read_file': 'Reading ',
@@ -484,7 +485,10 @@ function updateAiMessageUI(bubble, content) {
             'edit_file': 'Modifying ',
             'delete_file': 'Deleting ',
             'read_codebase': 'Scanning Codebase...',
-            'search_codebase': 'Searching Codebase...'
+            'search_codebase': 'Searching Codebase...',
+            'todo_add': 'Adding To-Do: ',
+            'todo_read': 'Reading To-Do List',
+            'todo_check': 'Checking To-Do: '
         };
         const doneMap = {
             'read_file': 'Read ',
@@ -493,7 +497,10 @@ function updateAiMessageUI(bubble, content) {
             'edit_file': 'Modified ',
             'delete_file': 'Deleted ',
             'read_codebase': 'Scan Complete',
-            'search_codebase': 'Search Complete'
+            'search_codebase': 'Search Complete',
+            'todo_add': 'Added To-Do: ',
+            'todo_read': 'To-Do List Read',
+            'todo_check': 'Checked To-Do: '
         };
 
         const label = isComplete ? (doneMap[type] + (path || "")) : (labelMap[type] + (path || ""));
@@ -552,10 +559,10 @@ const creditsModal = document.getElementById('credits-modal');
 document.getElementById('btn-credits-about').addEventListener('click', () => creditsModal.classList.remove('hidden'));
 document.getElementById('btn-close-credits').addEventListener('click', () => creditsModal.classList.add('hidden'));
 
-function createToolCard(text, isDone) {
+function createToolCard(text, isDone, type, path, diffData) {
     const card = document.createElement('div');
-    card.className = `tool-status-card ${isDone ? 'done' : ''}`;
-    // Force rectangle look
+    card.className = `tool-status-card ${isDone ? 'done' : ''} ${isDone ? 'clickable' : ''}`;
+    
     card.style.display = "flex";
     card.style.margin = "12px 0";
     card.style.width = "100%";
@@ -566,7 +573,9 @@ function createToolCard(text, isDone) {
     card.style.borderRadius = "8px";
     card.style.alignItems = "center";
     card.style.gap = "12px";
-    
+    card.style.cursor = isDone ? "pointer" : "default";
+    card.style.transition = "transform 0.1s, background 0.2s";
+
     if (isDone) {
         card.style.borderColor = "#2f855a";
         card.innerHTML = `<span style="color: #48bb78; font-weight: bold;">✓</span> <span style="font-size: 13px; color: #e2e8f0;">${text} <span style="font-size: 10px; opacity: 0.6; margin-left: 8px;">(View)</span></span>`;
@@ -591,6 +600,31 @@ function createToolCard(text, isDone) {
 
 function executeAiTools(content) {
     let contextAdded = false;
+
+    // To-Do Read
+    if (content.includes('<todo_read/>')) {
+        let listText = "Current AI To-Do List:\n";
+        if (todos.length === 0) listText += "(Empty)";
+        todos.forEach((t, i) => {
+            listText += `${i + 1}. [${t.done ? 'x' : ' '}] ${t.task}\n`;
+        });
+        chatMessages.push({ role: 'system', content: listText });
+        contextAdded = true;
+    }
+
+    // To-Do Add
+    const todoAddMatches = content.matchAll(/<todo_add task="([^"]+)"\/>/g);
+    for (const match of todoAddMatches) {
+        todos.push({ task: match[1], done: false });
+    }
+
+    // To-Do Check
+    const todoCheckMatches = content.matchAll(/<todo_check task="([^"]+)"\/>/g);
+    for (const match of todoCheckMatches) {
+        const taskName = match[1];
+        const t = todos.find(item => item.task === taskName);
+        if (t) t.done = true;
+    }
 
     // Read Codebase
     if (content.includes('<read_codebase/>')) {
