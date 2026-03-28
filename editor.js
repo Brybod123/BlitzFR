@@ -1020,3 +1020,148 @@ function executeAiTools(content) {
 }
 
 setInterval(updateCredits, 5000);
+
+// =========================================
+// Firebase RTDB Save/Load Project Logic
+// =========================================
+
+let currentProjectId = null;
+
+// Generate a tiny thumbnail from the preview iframe
+async function captureThumbnail() {
+    try {
+        const iframe = document.getElementById('preview-frame');
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+        if (!iframeDoc || !iframeDoc.body) return null;
+
+        const canvas = await html2canvas(iframeDoc.body, {
+            width: 400,
+            height: 300,
+            scale: 0.5,
+            useCORS: true,
+            logging: false
+        });
+        // Compress to tiny JPEG (quality 0.4 keeps it under ~15-30KB)
+        return canvas.toDataURL('image/jpeg', 0.4);
+    } catch (e) {
+        console.warn("Thumbnail capture failed:", e);
+        return null;
+    }
+}
+
+// Serialize all files to a plain object for RTDB
+function serializeFiles() {
+    const out = {};
+    for (const [name, fileObj] of Object.entries(files)) {
+        out[name] = {
+            content: fileObj.model.getValue(),
+            lang: fileObj.lang
+        };
+    }
+    return out;
+}
+
+// Save project to Firebase RTDB
+async function saveProject() {
+    if (!window.firebaseReady) {
+        console.warn("Firebase not ready yet.");
+        return;
+    }
+
+    const projectName = prompt("Project name:", "My Blitz Project");
+    if (!projectName) return;
+
+    const thumbnail = await captureThumbnail();
+    const fileData = serializeFiles();
+
+    const projectPayload = {
+        name: projectName,
+        files: fileData,
+        updatedAt: Date.now(),
+        thumbnail: thumbnail || null
+    };
+
+    try {
+        if (currentProjectId) {
+            // Update existing project
+            const projRef = window.firebaseRef(window.firebaseDB, 'projects/' + currentProjectId);
+            await window.firebaseSet(projRef, projectPayload);
+            console.log("Project updated:", currentProjectId);
+        } else {
+            // Create new project
+            const projListRef = window.firebaseRef(window.firebaseDB, 'projects');
+            const newRef = window.firebasePush(projListRef);
+            currentProjectId = newRef.key;
+            await window.firebaseSet(newRef, projectPayload);
+            // Update URL so refreshes keep the project loaded
+            history.replaceState(null, '', 'editor.html?project=' + currentProjectId);
+            console.log("Project created:", currentProjectId);
+        }
+        alert("Project saved!");
+    } catch (e) {
+        console.error("Save failed:", e);
+        alert("Save failed: " + e.message);
+    }
+}
+
+// Load project from Firebase RTDB
+async function loadProject(projectId) {
+    if (!window.firebaseReady) {
+        // Wait for Firebase to be ready
+        window.addEventListener('firebase-ready', () => loadProject(projectId), { once: true });
+        return;
+    }
+
+    try {
+        const projRef = window.firebaseRef(window.firebaseDB, 'projects/' + projectId);
+        const snapshot = await window.firebaseGet(projRef);
+        if (!snapshot.exists()) {
+            console.warn("Project not found:", projectId);
+            return;
+        }
+
+        const data = snapshot.val();
+        currentProjectId = projectId;
+
+        // Clear existing files
+        for (const name in files) {
+            files[name].model.dispose();
+            delete files[name];
+        }
+
+        // Load files from RTDB
+        if (data.files) {
+            for (const [name, fileInfo] of Object.entries(data.files)) {
+                const lang = fileInfo.lang || 'plaintext';
+                files[name] = {
+                    model: monaco.editor.createModel(fileInfo.content || "", lang, monaco.Uri.file(name)),
+                    lang: lang
+                };
+                bindContentChange(files[name].model);
+            }
+        }
+
+        // Set active file
+        activeFile = Object.keys(files)[0] || 'index.html';
+        if (files[activeFile]) editor.setModel(files[activeFile].model);
+        renderFiles();
+        updatePreview();
+        console.log("Project loaded:", projectId, data.name);
+    } catch (e) {
+        console.error("Load failed:", e);
+    }
+}
+
+// Wire SAVE button
+document.querySelector('.save-btn').addEventListener('click', saveProject);
+
+// Check URL for ?project=ID on page load
+const urlParams = new URLSearchParams(window.location.search);
+const loadId = urlParams.get('project');
+if (loadId) {
+    if (window.firebaseReady) {
+        loadProject(loadId);
+    } else {
+        window.addEventListener('firebase-ready', () => loadProject(loadId), { once: true });
+    }
+}

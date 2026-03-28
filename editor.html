@@ -117,10 +117,14 @@
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
                             </div>
                             <div class="model-dropdown-list hidden" id="model-dropdown-list">
-                                <div class="model-filters" id="model-filters" style="display:flex; gap:5px; padding: 5px; border-bottom: 1px solid #2d3748; margin-bottom: 5px;">
-                                    <button class="filter-btn active" data-sort="cost" style="flex:1; font-size:10px; padding:4px; background:#2d3748; color:#fff; border:none; border-radius:3px; cursor:pointer;">Cost</button>
-                                    <button class="filter-btn" data-sort="speed" style="flex:1; font-size:10px; padding:4px; background:transparent; color:#a0aec0; border:none; border-radius:3px; cursor:pointer;">Speed</button>
-                                    <button class="filter-btn" data-sort="performance" style="flex:1; font-size:10px; padding:4px; background:transparent; color:#a0aec0; border:none; border-radius:3px; cursor:pointer;">Perform</button>
+                                <div class="model-filters" id="model-filters"
+                                    style="display:flex; gap:5px; padding: 5px; border-bottom: 1px solid #2d3748; margin-bottom: 5px;">
+                                    <button class="filter-btn active" data-sort="cost"
+                                        style="flex:1; font-size:10px; padding:4px; background:#2d3748; color:#fff; border:none; border-radius:3px; cursor:pointer;">Cost</button>
+                                    <button class="filter-btn" data-sort="speed"
+                                        style="flex:1; font-size:10px; padding:4px; background:transparent; color:#a0aec0; border:none; border-radius:3px; cursor:pointer;">Speed</button>
+                                    <button class="filter-btn" data-sort="performance"
+                                        style="flex:1; font-size:10px; padding:4px; background:transparent; color:#a0aec0; border:none; border-radius:3px; cursor:pointer;">Perform</button>
                                 </div>
                                 <div id="model-list-items">
                                     <!-- Dynamic items go here -->
@@ -147,13 +151,43 @@
 
 <!-- Initialize Monaco Editor -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.46.0/min/vs/loader.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <script>
-        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.46.0/min/vs' }});
-        require(['vs/editor/editor.main'], function() {
+        require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.46.0/min/vs' } });
+        require(['vs/editor/editor.main'], function () {
             const script = document.createElement('script');
             script.src = 'editor.js?v=' + Date.now();
             document.body.appendChild(script);
         });
+    </script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
+        import { getDatabase, ref, set, get, push } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDz4P07G-B05SqCMyDdCnIyRAJNy19_1oQ",
+            authDomain: "blitz-6c88c.firebaseapp.com",
+            databaseURL: "https://blitz-6c88c-default-rtdb.firebaseio.com",
+            projectId: "blitz-6c88c",
+            storageBucket: "blitz-6c88c.firebasestorage.app",
+            messagingSenderId: "390946741291",
+            appId: "1:390946741291:web:e6ae60970e2847403d9e6e",
+            measurementId: "G-WC5KP3MXP9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const db = getDatabase(app);
+
+        // Expose Firebase RTDB tools globally so editor.js (non-module) can use them
+        window.firebaseDB = db;
+        window.firebaseRef = ref;
+        window.firebaseSet = set;
+        window.firebaseGet = get;
+        window.firebasePush = push;
+        window.firebaseReady = true;
+        window.dispatchEvent(new Event('firebase-ready'));
     </script>
 </body>
 </html>
