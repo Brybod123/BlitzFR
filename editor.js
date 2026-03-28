@@ -603,9 +603,16 @@ async function updateModelStats() {
             { id: "openai/gpt-5.4-nano", name: "GPT 5.4 Nano" }
         ];
 
+function formatSigDigit(n) {
+    if (n === 0) return "0.00";
+    const d = Math.ceil(-Math.log10(n));
+    const power = Math.pow(10, d);
+    return (Math.floor(n * power) / power).toFixed(d);
+}
+
         models.forEach(m => {
             const price = parseFloat(modelPrices[m.id]) || 0;
-            const cost = (avgTokens * price).toFixed(6);
+            const cost = formatSigDigit(avgTokens * price);
             const opt = document.createElement('div');
             opt.className = 'model-option';
             opt.dataset.value = m.id;
@@ -628,7 +635,7 @@ async function updateModelStats() {
 
 function calculateEstimatedCost(modelId) {
     const pricePerToken = parseFloat(modelPrices[modelId]) || 0;
-    const estCost = (avgTokens * pricePerToken).toFixed(6);
+    const estCost = formatSigDigit(avgTokens * pricePerToken);
     document.getElementById('avg-cost-val').textContent = `$${estCost}`;
 }
 
