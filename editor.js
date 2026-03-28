@@ -1170,8 +1170,53 @@ setInterval(updateCredits, 5000);
 // Firebase RTDB Save/Load Project Logic
 // =========================================
 
+function buildFallbackThumbnail(projectName = 'Untitled Project') {
+    const canvas = document.createElement('canvas');
+    canvas.width = 400;
+    canvas.height = 300;
+    const context = canvas.getContext('2d');
+    if (!context) return null;
+
+    const seedSource = `${projectName}|${Object.keys(files).sort().join('|')}`;
+    let seed = 0;
+    for (const char of seedSource) seed = ((seed << 5) - seed) + char.charCodeAt(0);
+    const hue = Math.abs(seed) % 360;
+    const accentHue = (hue + 36) % 360;
+    const primary = `hsl(${hue} 65% 58%)`;
+    const secondary = `hsl(${accentHue} 70% 48%)`;
+
+    const gradient = context.createLinearGradient(0, 0, 400, 300);
+    gradient.addColorStop(0, '#10131a');
+    gradient.addColorStop(1, '#1b2330');
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, canvas.width, canvas.height);
+
+    context.fillStyle = primary;
+    context.fillRect(24, 24, 352, 208);
+
+    context.fillStyle = 'rgba(255, 255, 255, 0.12)';
+    for (let i = 0; i < 6; i += 1) {
+        context.fillRect(48, 64 + (i * 24), 304 - (i * 18), 10);
+    }
+
+    context.fillStyle = secondary;
+    context.fillRect(24, 246, 120, 20);
+
+    context.fillStyle = '#ffffff';
+    context.font = 'bold 28px Arial, sans-serif';
+    context.fillText((projectName || 'Untitled Project').slice(0, 22), 28, 284);
+
+    context.fillStyle = 'rgba(255, 255, 255, 0.75)';
+    context.font = '16px Arial, sans-serif';
+    context.fillText(`${Object.keys(files).length} file${Object.keys(files).length === 1 ? '' : 's'}`, 306, 282);
+
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.72);
+    console.log('[thumbnail] fallback thumbnail generated', { length: dataUrl.length });
+    return dataUrl;
+}
+
 // Generate a tiny thumbnail from the preview iframe
-async function captureThumbnail() {
+async function captureThumbnail(projectName = 'Untitled Project') {
     const captureRoot = document.createElement('div');
     captureRoot.style.position = 'fixed';
     captureRoot.style.left = '-99999px';
@@ -1268,7 +1313,7 @@ async function captureThumbnail() {
         return dataUrl;
     } catch (e) {
         console.warn("Thumbnail capture failed:", e);
-        return null;
+        return buildFallbackThumbnail(projectName);
     } finally {
         captureRoot.remove();
     }
@@ -1317,7 +1362,7 @@ async function saveProject() {
     const projectName = prompt("Project name:", "My Blitz Project");
     if (!projectName) return;
 
-    const thumbnail = await captureThumbnail();
+    const thumbnail = await captureThumbnail(projectName);
     console.log('[thumbnail] save payload thumbnail result', thumbnail ? { length: thumbnail.length } : null);
     const fileData = serializeFiles();
 
