@@ -393,10 +393,16 @@ async function runChatLoop(bubble, turn = 1) {
         ...chatMessages.slice(1)
     ];
 
+    const modelSelect = document.getElementById('model-select');
+    const selectedModel = modelSelect?.value || "qwen/qwen-2.5-72b-instruct";
+
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
-            body: JSON.stringify({ messages: tempMessages })
+            body: JSON.stringify({ 
+                messages: tempMessages,
+                model: selectedModel
+            })
         });
 
         if (!response.ok) {
@@ -432,6 +438,7 @@ async function runChatLoop(bubble, turn = 1) {
         }
         
         chatMessages.push({ role: 'assistant', content: aiContent });
+        updateCredits();
 
         // Parse and Execute Tools
         const needsReply = executeAiTools(aiContent);
@@ -682,3 +689,5 @@ function executeAiTools(content) {
 
     return contextAdded;
 }
+
+setInterval(updateCredits, 5000);

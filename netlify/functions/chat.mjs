@@ -32,7 +32,7 @@ export default async (req, context) => {
                 "Content-Type": "application/json"
             },
             body: JSON.stringify({
-                model: "qwen/qwen3.5-flash-02-23",
+                model: body.model || "qwen/qwen-2.5-72b-instruct",
                 messages: body.messages || [],
                 stream: true
             })
