@@ -1215,6 +1215,10 @@ function buildFallbackThumbnail(projectName = 'Untitled Project') {
     return dataUrl;
 }
 
+function svgToDataUrl(svgMarkup) {
+    return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgMarkup)}`;
+}
+
 // Generate a tiny thumbnail from the preview iframe
 async function captureThumbnail(projectName = 'Untitled Project') {
     const captureRoot = document.createElement('div');
@@ -1282,33 +1286,11 @@ async function captureThumbnail(projectName = 'Untitled Project') {
                 </foreignObject>
             </svg>
         `;
-        const svgBlobUrl = URL.createObjectURL(new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' }));
         console.log('[thumbnail] svg prepared', { length: svgMarkup.length });
 
-        const image = new Image();
-        image.decoding = 'async';
-
-        await new Promise((resolve, reject) => {
-            image.onload = resolve;
-            image.onerror = () => reject(new Error('SVG thumbnail image failed to load.'));
-            image.src = svgBlobUrl;
-        });
-
-        const canvas = document.createElement('canvas');
-        canvas.width = 400;
-        canvas.height = 300;
-        const context = canvas.getContext('2d');
-        if (!context) throw new Error('Canvas context unavailable for thumbnail rendering.');
-
-        context.fillStyle = '#ffffff';
-        context.fillRect(0, 0, canvas.width, canvas.height);
-        context.drawImage(image, 0, 0, canvas.width, canvas.height);
-        console.log('[thumbnail] canvas render complete', { width: canvas.width, height: canvas.height });
-
         URL.revokeObjectURL(htmlBlobUrl);
-        URL.revokeObjectURL(svgBlobUrl);
         Object.values(rendered.assetUrls).forEach(URL.revokeObjectURL);
-        const dataUrl = canvas.toDataURL('image/jpeg', 0.4);
+        const dataUrl = svgToDataUrl(svgMarkup);
         console.log('[thumbnail] data url generated', { length: dataUrl.length });
         return dataUrl;
     } catch (e) {
