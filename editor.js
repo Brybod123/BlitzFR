@@ -581,6 +581,13 @@ window.addEventListener('click', () => {
     dropdownList.classList.add('hidden');
 });
 
+function formatSigDigit(n) {
+    if (n === 0) return "0.00";
+    const d = Math.max(1, Math.ceil(-Math.log10(n)));
+    const power = Math.pow(10, d);
+    return (Math.floor(n * power) / power).toFixed(d);
+}
+
 async function updateModelStats() {
     try {
         const res = await fetch('/api/stats');
@@ -603,12 +610,6 @@ async function updateModelStats() {
             { id: "openai/gpt-5.4-nano", name: "GPT 5.4 Nano" }
         ];
 
-function formatSigDigit(n) {
-    if (n === 0) return "0.00";
-    const d = Math.ceil(-Math.log10(n));
-    const power = Math.pow(10, d);
-    return (Math.floor(n * power) / power).toFixed(d);
-}
 
         models.forEach(m => {
             const price = parseFloat(modelPrices[m.id]) || 0;
