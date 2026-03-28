@@ -163,7 +163,7 @@
     </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
         import { getDatabase, ref, set, get, push } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
@@ -181,10 +181,12 @@
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const auth = getAuth(app);
+        const googleProvider = new GoogleAuthProvider();
         const db = getDatabase(app);
 
         // Expose Firebase RTDB tools globally so editor.js (non-module) can use them
         window.firebaseAuth = auth;
+        window.firebaseSignIn = async () => signInWithPopup(auth, googleProvider);
         window.firebaseDB = db;
         window.firebaseRef = ref;
         window.firebaseSet = set;
@@ -193,7 +195,7 @@
         window.firebaseReady = true;
         window.dispatchEvent(new Event('firebase-ready'));
 
-        onAuthStateChanged(auth, async (user) => {
+        onAuthStateChanged(auth, (user) => {
             if (user) {
                 window.firebaseUser = user;
                 window.firebaseAuthReady = true;
@@ -201,12 +203,8 @@
                 return;
             }
 
+            window.firebaseUser = null;
             window.firebaseAuthReady = false;
-            try {
-                await signInAnonymously(auth);
-            } catch (error) {
-                console.error("Anonymous auth failed:", error);
-            }
         });
     </script>
 </body>

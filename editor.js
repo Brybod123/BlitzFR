@@ -144,6 +144,10 @@ function waitForAuth() {
         return Promise.resolve(currentUser);
     }
 
+    if (!window.firebaseUser && typeof window.firebaseSignIn === 'function') {
+        return window.firebaseSignIn().then(() => waitForAuth());
+    }
+
     return new Promise((resolve, reject) => {
         const timer = setTimeout(() => {
             cleanup();
@@ -170,10 +174,10 @@ function updateSaveButtonState() {
     if (!saveBtn) return;
 
     if (!currentUser) {
-        saveBtn.disabled = true;
-        saveBtn.textContent = 'AUTH...';
-        saveBtn.style.opacity = '0.5';
-        saveBtn.style.cursor = 'wait';
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'SIGN IN';
+        saveBtn.style.opacity = '1';
+        saveBtn.style.cursor = 'pointer';
         return;
     }
 

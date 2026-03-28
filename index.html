@@ -172,7 +172,7 @@
     </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
@@ -190,6 +190,7 @@
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const auth = getAuth(app);
+        const googleProvider = new GoogleAuthProvider();
         const db = getDatabase(app);
         const headerAction = document.getElementById('header-auth-action');
         const headerActionLabel = document.getElementById('header-auth-action-label');
@@ -203,7 +204,8 @@
 
         async function beginSignIn() {
             try {
-                await signInAnonymously(auth);
+                await signInWithPopup(auth, googleProvider);
+                routeToEditor();
             } catch (error) {
                 console.error("Homepage auth failed:", error);
             }
