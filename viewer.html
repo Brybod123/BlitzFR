@@ -47,6 +47,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.46.0/min/vs/loader.min.js"></script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
         import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -61,9 +62,32 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
         const db = getDatabase(app);
+        const actionBtn = document.getElementById('btn-fork');
+        const actionBtnLabel = actionBtn.querySelector('span');
+        let currentAuthUser = null;
+        let loadedProjectOwnerUid = null;
+        let loadedProjectId = null;
 
         function decodeKey(k) { return k.replace(/_DOT_/g, '.'); }
+
+        function updateActionButton() {
+            if (!loadedProjectId) return;
+            const isOwner = currentAuthUser && loadedProjectOwnerUid && currentAuthUser.uid === loadedProjectOwnerUid;
+            actionBtnLabel.textContent = isOwner ? 'EDIT' : 'FORK';
+            actionBtn.title = isOwner ? 'Edit Project' : 'Fork to Editor';
+            actionBtn.onclick = () => {
+                window.location.href = isOwner
+                    ? 'editor.html?project=' + loadedProjectId
+                    : 'editor.html?forkOf=' + loadedProjectId;
+            };
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            currentAuthUser = user;
+            updateActionButton();
+        });
 
         const params = new URLSearchParams(window.location.search);
         const projectId = params.get('project');
@@ -88,6 +112,8 @@
                 }
 
                 const data = snapshot.val();
+                loadedProjectId = id;
+                loadedProjectOwnerUid = data.ownerUid || null;
                 document.getElementById('project-name').textContent = data.name || 'Untitled';
                 document.title = (data.name || 'Untitled') + ' - Blitz Viewer';
                 const sourceEl = document.getElementById('project-source');
@@ -119,11 +145,7 @@
 
                 renderPreview();
                 renderFileTabs();
-
-                // Wire fork button
-                document.getElementById('btn-fork').addEventListener('click', () => {
-                    window.location.href = 'editor.html?forkOf=' + id;
-                });
+                updateActionButton();
 
             } catch (e) {
                 console.error("Load failed:", e);
