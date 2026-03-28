@@ -122,44 +122,85 @@ function showDiff(filename, oldContent, newContent) {
     openFile(filename);
 }
 
-// Build Live Preview from all relevant files
-function updatePreview() {
+let currentPreviewPage = 'index.html';
+let activeBlobUrls = {}; // Track blob URLs to prevent memory leaks
+
+window.addEventListener('message', (e) => {
+    if (e.data && e.data.type === 'navigate') {
+        let target = e.data.url;
+        target = target.replace(/^\.\//, '').replace(/^\//, ''); // Clean leading slashes
+        if (files[target]) {
+            console.log(`VFS Navigation: Route to ${target}`);
+            updatePreview(target);
+        } else {
+            console.warn(`VFS Navigation: Route ${target} not found in virtual system.`);
+        }
+    }
+});
+
+// Build Live Preview with multi-page and asset support
+function updatePreview(pageToLoad = currentPreviewPage) {
     try {
-        let allHtml = "";
-        let allCss = "";
-        let allJs = "";
+        if (!files[pageToLoad]) pageToLoad = Object.keys(files).find(f => f.endsWith('.html')) || 'index.html';
+        currentPreviewPage = pageToLoad;
+        
+        // Clean up old object URLs
+        Object.values(activeBlobUrls).forEach(URL.revokeObjectURL);
+        activeBlobUrls = {};
 
-        Object.keys(files).forEach(f => {
-            if (f.endsWith('.html')) allHtml += files[f].model.getValue() + "\n";
-            else if (f.endsWith('.css')) allCss += files[f].model.getValue() + "\n";
-            else if (f.endsWith('.js')) allJs += files[f].model.getValue() + "\n";
-        });
+        // Generate blobs for all current assets (CSS/JS)
+        for (const [filename, fileObj] of Object.entries(files)) {
+            if (filename.endsWith('.html')) continue;
+            let type = 'text/plain';
+            if (filename.endsWith('.css')) type = 'text/css';
+            else if (filename.endsWith('.js')) type = 'application/javascript';
+            const blob = new Blob([fileObj.model.getValue()], { type });
+            activeBlobUrls[filename] = URL.createObjectURL(blob);
+        }
 
-        const finalHtml = `
-<!DOCTYPE html>
-<html>
-<head>
-    <style>${allCss}</style>
-</head>
-<body>
-    ${allHtml}
-    <script>${allJs}<\/script>
-</body>
-</html>
-        `;
+        let htmlContent = files[pageToLoad] ? files[pageToLoad].model.getValue() : "<h1>No valid HTML page found</h1>";
 
-        const blob = new Blob([finalHtml], { type: 'text/html' });
+        // Map src and href to the new Blob URLs
+        for (const [filename, url] of Object.entries(activeBlobUrls)) {
+            const regexHref = new RegExp(`href=["']\\.?/?${filename}["']`, 'g');
+            const regexSrc = new RegExp(`src=["']\\.?/?${filename}["']`, 'g');
+            htmlContent = htmlContent.replace(regexHref, `href="${url}"`);
+            htmlContent = htmlContent.replace(regexSrc, `src="${url}"`);
+        }
+
+        // Inject navigation interceptor script
+        const interceptScript = `
+<script>
+    document.addEventListener('click', function(e) {
+        const a = e.target.closest('a');
+        if (a && a.getAttribute('href')) {
+            const href = a.getAttribute('href');
+            // Allow external links or anchors
+            if (!href.startsWith('http') && !href.startsWith('#') && !href.startsWith('mailto:')) {
+                e.preventDefault();
+                window.parent.postMessage({ type: 'navigate', url: href }, '*');
+            }
+        }
+    });
+<\/script>`;
+
+        if (htmlContent.includes('</body>')) {
+            htmlContent = htmlContent.replace('</body>', interceptScript + '\n</body>');
+        } else {
+            htmlContent += interceptScript;
+        }
+
+        const blob = new Blob([htmlContent], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         previewFrame.src = url;
 
-        if (previewFrame.dataset.lastUrl) {
-            URL.revokeObjectURL(previewFrame.dataset.lastUrl);
-        }
+        if (previewFrame.dataset.lastUrl) URL.revokeObjectURL(previewFrame.dataset.lastUrl);
         previewFrame.dataset.lastUrl = url;
     } catch (e) {
         console.error("Preview Update Error:", e);
     }
 }
+
 
 // Bind active listeners
 function bindContentChange(model) {
