@@ -11,8 +11,8 @@ const fileList = document.getElementById('file-list');
 const btnNewFile = document.getElementById('btn-new-file');
 
 let chatMessages = [
-    { 
-        role: 'system', 
+    {
+        role: 'system',
         content: `You are an advanced AI coding assistant in the Blitz IDE. 
 You can manipulate files using special tags. Use them only when necessary.
 
@@ -23,7 +23,7 @@ TOOLS:
 4. To delete a file: <delete_file path="filename"/>
 
 When editing, the <search> block must exactly match the text in the file.
-You can use multiple tags in one response. Always explain what you are doing.` 
+You can use multiple tags in one response. Always explain what you are doing.`
     }
 ];
 
@@ -147,11 +147,11 @@ function updatePreview() {
 </body>
 </html>
         `;
-        
+
         const blob = new Blob([finalHtml], { type: 'text/html' });
         const url = URL.createObjectURL(blob);
         previewFrame.src = url;
-        
+
         if (previewFrame.dataset.lastUrl) {
             URL.revokeObjectURL(previewFrame.dataset.lastUrl);
         }
@@ -180,7 +180,7 @@ function renderFiles() {
         // File Tree Item
         const li = document.createElement('li');
         li.className = `file-item ${filename === activeFile ? 'active' : ''}`;
-        
+
         let icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>`;
         if (filename.endsWith('.html')) {
             icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#e34f26" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>`;
@@ -191,20 +191,20 @@ function renderFiles() {
         } else if (filename.endsWith('.py')) {
             icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#357abd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>`;
         }
-        
+
         li.innerHTML = `<span>${icon}</span> <span>${filename}</span>
             <button class="file-item-delete" title="Delete">✕</button>`;
-        
+
         li.addEventListener('click', (e) => {
-            if(e.target.classList.contains('file-item-delete')) return;
+            if (e.target.classList.contains('file-item-delete')) return;
             openFile(filename);
         });
-        
+
         li.querySelector('.file-item-delete').addEventListener('click', (e) => {
             e.stopPropagation();
             deleteFile(filename);
         });
-        
+
         fileList.appendChild(li);
 
         // Code Tab Item
@@ -228,15 +228,15 @@ function deleteFile(filename) {
         alert("You must leave at least one file open.");
         return;
     }
-    
+
     files[filename].model.dispose();
     delete files[filename];
-    
+
     if (activeFile === filename) {
         activeFile = Object.keys(files)[0];
         editor.setModel(files[activeFile].model);
     }
-    
+
     renderFiles();
     updatePreview();
 }
@@ -244,7 +244,7 @@ function deleteFile(filename) {
 btnNewFile.addEventListener('click', () => {
     let filename = prompt("Enter a file name (e.g., main.py, index.html):", "newfile.py");
     if (!filename) return;
-    
+
     filename = filename.trim();
     if (files[filename]) {
         alert("File already exists!");
@@ -282,16 +282,16 @@ function applyFileEdit(filename, search, replace) {
     if (!files[filename]) return `Error: File ${filename} not found.`;
     const model = files[filename].model;
     const content = model.getValue();
-    
+
     if (!content.includes(search)) {
         return `Error: Search string not found in ${filename}.`;
     }
-    
+
     const newContent = content.replace(search, replace);
-    
+
     // Capture for diff
     showDiff(filename, content, newContent);
-    
+
     model.setValue(newContent);
     updatePreview();
     return `Successfully updated ${filename}.`;
@@ -326,7 +326,7 @@ toggleBtns.forEach(btn => {
         btn.classList.add('active');
 
         const mode = btn.dataset.mode;
-        
+
         if (mode === 'ai') {
             codeView.classList.add('hidden');
             aiEditor.classList.remove('hidden');
@@ -396,7 +396,7 @@ async function runChatLoop(bubble, turn = 1) {
     const fileContext = Object.keys(files).map(f => `- ${f}`).join('\n');
     const tempMessages = [
         ...chatMessages.slice(0, 1),
-        { role: 'system', content: `Current files in project:\n${fileContext}\nProject context: This is a web project. index.html is the entry point.`},
+        { role: 'system', content: `Current files in project:\n${fileContext}\nProject context: This is a web project. index.html is the entry point.` },
         ...chatMessages.slice(1)
     ];
 
@@ -405,7 +405,7 @@ async function runChatLoop(bubble, turn = 1) {
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
-            body: JSON.stringify({ 
+            body: JSON.stringify({
                 messages: tempMessages,
                 model: currentModelId
             })
@@ -419,7 +419,7 @@ async function runChatLoop(bubble, turn = 1) {
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let aiContent = "";
-        
+
         while (true) {
             const { value, done } = await reader.read();
             if (done) break;
@@ -442,14 +442,14 @@ async function runChatLoop(bubble, turn = 1) {
                 }
             }
         }
-        
+
         chatMessages.push({ role: 'assistant', content: aiContent });
         updateCredits();
         updateModelStats(); // Market refresh
 
         // Parse and Execute Tools
         const needsReply = executeAiTools(aiContent);
-        
+
         if (needsReply) {
             await new Promise(r => setTimeout(r, 300));
             // Add a separator for the next turn
@@ -468,13 +468,13 @@ async function runChatLoop(bubble, turn = 1) {
 
 function updateAiMessageUI(bubble, content) {
     bubble.innerHTML = '';
-    
+
     // Combined regex for XML-style and Kimi-style tools
     const regex = /(<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)[^>]*\/>|<(write_file|edit_file|create_file|search_codebase)[^>]*>[\s\S]*?<\/(write_file|edit_file|create_file|search_codebase)>|<\|tool_call_begin\|> functions\.(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check):\d+ <\|tool_call_argument_begin\|> ([\s\S]*?) <\|tool_call_end\|>)|(<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)[^>]*$|<(write_file|edit_file|create_file|search_codebase)[^>]*>[\s\S]*?$|<\|tool_call_begin\|> functions\.(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check):\d+ <\|tool_call_argument_begin\|> [\s\S]*?$)/g;
-    
+
     let lastIndex = 0;
     let match;
-    
+
     while ((match = regex.exec(content)) !== null) {
         const textBefore = content.substring(lastIndex, match.index);
         if (textBefore) {
@@ -482,10 +482,10 @@ function updateAiMessageUI(bubble, content) {
             span.innerHTML = marked.parse(textBefore);
             bubble.appendChild(span);
         }
-        
+
         const fullMatch = match[0];
         const isComplete = !!match[1];
-        
+
         let type, path, diffData = null;
 
         if (fullMatch.includes('<|tool_call_begin|>')) {
@@ -500,7 +500,7 @@ function updateAiMessageUI(bubble, content) {
                     if (type === 'edit_file' && isComplete) {
                         diffData = { path, search: args.search, replace: args.replace };
                     }
-                } catch(e) { path = "item"; }
+                } catch (e) { path = "item"; }
             }
         } else {
             // XML style
@@ -509,14 +509,14 @@ function updateAiMessageUI(bubble, content) {
             const pathMatch = fullMatch.match(/path="([^"]+)"/);
             const taskMatch = fullMatch.match(/task="([^"]+)"/);
             path = pathMatch ? pathMatch[1] : (taskMatch ? taskMatch[1] : "");
-            
+
             if (type === 'edit_file' && isComplete) {
                 const sm = fullMatch.match(/<search>([\s\S]*?)<\/search>/);
                 const rm = fullMatch.match(/<replace>([\s\S]*?)<\/replace>/);
                 if (sm && rm) diffData = { path, search: sm[1], replace: rm[1] };
             }
         }
-        
+
         const labelMap = {
             'read_file': 'Reading ',
             'write_file': 'Writing ',
@@ -546,7 +546,7 @@ function updateAiMessageUI(bubble, content) {
         bubble.appendChild(createToolCard(label, isComplete, type, path, diffData));
         lastIndex = regex.lastIndex;
     }
-    
+
     const remainingText = content.substring(lastIndex);
     if (remainingText) {
         const span = document.createElement('span');
@@ -555,19 +555,23 @@ function updateAiMessageUI(bubble, content) {
     }
 }
 
+let globalCredits = 100;
+
 // Credits Logic
 async function updateCredits() {
     try {
         const res = await fetch('/api/credits');
-        const { credits } = await res.json();
+        const data = await res.json();
+        const credits = data.credits;
+        globalCredits = credits;
         const bar = document.getElementById('credits-bar');
         const text = document.getElementById('credits-text');
-        
+
         // Visualization: Scale 0-100 to 0-100%
         const percentage = Math.max(0, Math.min(100, credits));
         bar.style.width = percentage + '%';
-        text.textContent = `$${credits.toFixed(2)} credits remaining`;
-        
+        text.textContent = `$${credits.toFixed(2)} global credits remaining`;
+
         if (credits <= 50) {
             bar.style.background = 'black';
             generateBtn.disabled = true;
@@ -633,10 +637,10 @@ function getRemainingHourlyRequests(modelId) {
     const state = getHourlyState();
     const pricePerToken = parseFloat(modelPrices[modelId]) || 0.000005; // fallback
     const estCost = avgTokens * pricePerToken;
-    const balance = globalCredits - globalUsage;
-    
+    const balance = globalCredits;
+
     if (balance < 50) return 0;
-    
+
     // Theoretical hourly budget of $0.01
     const hourlyBudget = 0.01;
     const limit = Math.max(1, Math.floor(hourlyBudget / estCost));
@@ -650,15 +654,15 @@ async function updateModelStats() {
         console.log("MARKET STATS FETCHED:", data);
         avgTokens = data.avgTokens || 1000;
         modelPrices = data.prices || {};
-        
+
         // Update current cost estimate
         const currentModelId = dropdownTrigger.dataset.value || "qwen/qwen3.5-flash-02-23";
         calculateEstimatedCost(currentModelId);
-        
+
         // Re-render dropdown list options with costs
         const list = document.getElementById('model-dropdown-list');
         list.innerHTML = '';
-        
+
         const models = [
             { id: "qwen/qwen3.5-flash-02-23", name: "Qwen 3.5 Flash" },
             { id: "inception/mercury-2", name: "Mercury 2" },
@@ -678,7 +682,7 @@ async function updateModelStats() {
             opt.dataset.value = m.id;
             opt.dataset.name = m.name;
             opt.innerHTML = `${m.name} <span style="opacity: 0.5; margin-left: auto;">~$${cost}/req</span>`;
-            
+
             opt.addEventListener('click', () => {
                 dropdownTrigger.dataset.value = m.id;
                 modelNameSpan.textContent = m.name;
@@ -698,7 +702,7 @@ function calculateEstimatedCost(modelId) {
     const estCost = formatSigDigit(avgTokens * pricePerToken);
     console.log(`Calculating cost for ${modelId}: ${avgTokens.toFixed(0)} avg tokens * ${pricePerToken.toFixed(9)} price = $${estCost}`);
     document.getElementById('avg-cost-val').textContent = `$${estCost}`;
-    
+
     // Update Hourly Remaining
     const remaining = getRemainingHourlyRequests(modelId);
     document.getElementById('remaining-msgs-val').textContent = remaining;
@@ -721,7 +725,7 @@ if (document.getElementById('btn-close-credits')) {
 function createToolCard(text, isDone, type, path, diffData) {
     const card = document.createElement('div');
     card.className = `tool-status-card ${isDone ? 'done' : ''} ${isDone ? 'clickable' : ''}`;
-    
+
     card.style.display = "flex";
     card.style.margin = "12px 0";
     card.style.width = "100%";
@@ -738,10 +742,10 @@ function createToolCard(text, isDone, type, path, diffData) {
     if (isDone) {
         card.style.borderColor = "#2f855a";
         card.innerHTML = `<span style="color: #48bb78; font-weight: bold;">✓</span> <span style="font-size: 13px; color: #e2e8f0;">${text} <span style="font-size: 10px; opacity: 0.6; margin-left: 8px;">(View)</span></span>`;
-        
+
         card.addEventListener('mouseenter', () => { card.style.background = "#2d3748"; card.style.transform = "translateY(-1px)"; });
         card.addEventListener('mouseleave', () => { card.style.background = "#1a202c"; card.style.transform = "none"; });
-        
+
         card.addEventListener('click', () => {
             if (type === 'edit_file' && diffData) {
                 const oldContent = files[diffData.path].model.getValue();
@@ -790,7 +794,7 @@ function executeAiTools(content) {
     for (const match of kimiMatches) {
         const type = match[1];
         let args = {};
-        try { args = JSON.parse(match[2].trim()); } catch(e) {}
+        try { args = JSON.parse(match[2].trim()); } catch (e) { }
 
         if (type === 'read_file' && args.path && files[args.path]) {
             chatMessages.push({ role: 'system', content: `Content of ${args.path}:\n${files[args.path].model.getValue()}` });
