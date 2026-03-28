@@ -96,6 +96,32 @@ const editor = monaco.editor.create(document.getElementById('monaco-container'),
     fontFamily: 'ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace'
 });
 
+// Setup Diff Editor
+const diffEditor = monaco.editor.createDiffEditor(document.getElementById('diff-editor-inner'), {
+    theme: 'vs-dark',
+    automaticLayout: true,
+    fontSize: 14,
+    fontFamily: 'ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+    readOnly: true
+});
+
+const diffContainer = document.getElementById('monaco-diff-container');
+document.getElementById('btn-close-diff').addEventListener('click', () => {
+    diffContainer.classList.add('hidden');
+});
+
+function showDiff(filename, oldContent, newContent) {
+    const originalModel = monaco.editor.createModel(oldContent, files[filename].lang);
+    const modifiedModel = monaco.editor.createModel(newContent, files[filename].lang);
+    diffEditor.setModel({
+        original: originalModel,
+        modified: modifiedModel
+    });
+    diffContainer.classList.remove('hidden');
+    // Switch to file first
+    openFile(filename);
+}
+
 // Build Live Preview from all relevant files
 function updatePreview() {
     try {
@@ -262,6 +288,10 @@ function applyFileEdit(filename, search, replace) {
     }
     
     const newContent = content.replace(search, replace);
+    
+    // Capture for diff
+    showDiff(filename, content, newContent);
+    
     model.setValue(newContent);
     updatePreview();
     return `Successfully updated ${filename}.`;
@@ -349,11 +379,16 @@ generateBtn.addEventListener('click', async () => {
     generateBtn.disabled = true;
     const bubble = aiMsg.querySelector('.chat-bubble');
 
-    await runChatLoop(bubble);
+    // Tool container
+    const statusContainer = document.createElement('div');
+    statusContainer.className = 'tool-status-container';
+    aiMsg.appendChild(statusContainer);
+
+    await runChatLoop(bubble, statusContainer);
     generateBtn.disabled = false;
 });
 
-async function runChatLoop(bubble, turn = 1) {
+async function runChatLoop(bubble, statusContainer, turn = 1) {
     if (turn > 3) return; // Safeguard
 
     // Inject current file context into the request
@@ -379,7 +414,7 @@ async function runChatLoop(bubble, turn = 1) {
         const decoder = new TextDecoder("utf-8");
         let aiContent = "";
         
-        // Only clear bubble on first turn of a response
+        // Only clear bubble on first turn of the user's turn
         if (turn === 1) bubble.textContent = "";
 
         while (true) {
@@ -397,8 +432,9 @@ async function runChatLoop(bubble, turn = 1) {
                         const json = JSON.parse(dataStr);
                         if (json.choices && json.choices[0].delta && json.choices[0].delta.content) {
                             aiContent += json.choices[0].delta.content;
-                            // Clean up tags in UI if you want, or just show them
-                            bubble.textContent = aiContent;
+                            // FILTER OUT XML TAGS FOR DISPLAY
+                            const cleanText = aiContent.replace(/<[^>]+>/g, '');
+                            bubble.textContent = cleanText;
                             chatHistory.scrollTop = chatHistory.scrollHeight;
                         }
                     } catch (e) { }
@@ -409,13 +445,11 @@ async function runChatLoop(bubble, turn = 1) {
         chatMessages.push({ role: 'assistant', content: aiContent });
 
         // Parse and Execute Tools
-        const needsReply = executeAiTools(aiContent);
+        const result = executeAiTools(aiContent, statusContainer);
         
-        if (needsReply) {
-            // Add a small delay for UI feel
-            bubble.textContent += "\n(Processing tools...)";
-            await new Promise(r => setTimeout(r, 500));
-            await runChatLoop(bubble, turn + 1);
+        if (result.contextAdded) {
+            await new Promise(r => setTimeout(r, 300));
+            await runChatLoop(bubble, statusContainer, turn + 1);
         }
     } catch (err) {
         console.error(err);
@@ -423,37 +457,59 @@ async function runChatLoop(bubble, turn = 1) {
     }
 }
 
-function executeAiTools(content) {
+function executeAiTools(content, statusContainer) {
     let contextAdded = false;
 
-    // Read Files - This ADDS context but doesn't modify the project
+    function addStatus(text) {
+        const card = document.createElement('div');
+        card.className = 'tool-status-card';
+        card.innerHTML = `<div class="status-spinner"></div><span>${text}</span>`;
+        statusContainer.appendChild(card);
+        chatHistory.scrollTop = chatHistory.scrollHeight;
+        return card;
+    }
+
+    function markDone(card, text) {
+        card.className = 'tool-status-card done';
+        card.innerHTML = `<span class="status-icon-done">✓</span><span>${text}</span>`;
+    }
+
+    // Read Files
     const readMatches = content.matchAll(/<read_file path="([^"]+)"\/>/g);
     for (const match of readMatches) {
         const path = match[1];
+        const status = addStatus(`Reading ${path}...`);
         if (files[path]) {
             const fileData = files[path].model.getValue();
             chatMessages.push({ role: 'system', content: `Content of ${path}:\n${fileData}` });
             contextAdded = true;
+            markDone(status, `Read ${path}`);
         }
     }
 
     // Write Files
     const writeMatches = content.matchAll(/<write_file path="([^"]+)">([\s\S]*?)<\/write_file>/g);
     for (const match of writeMatches) {
+        const status = addStatus(`Updating ${match[1]}...`);
         aiCreateFile(match[1], match[2]);
+        markDone(status, `Updated ${match[1]}`);
     }
 
     // Edit Files (Search/Replace)
     const editMatches = content.matchAll(/<edit_file path="([^"]+)">\s*<search>([\s\S]*?)<\/search>\s*<replace>([\s\S]*?)<\/replace>\s*<\/edit_file>/g);
     for (const match of editMatches) {
+        const status = addStatus(`Refactoring ${match[1]}...`);
         applyFileEdit(match[1], match[2], match[3]);
+        markDone(status, `Edited ${match[1]}`);
     }
 
     // Delete Files
     const deleteMatches = content.matchAll(/<delete_file path="([^"]+)"\/>/g);
     for (const match of deleteMatches) {
+        const status = addStatus(`Deleting ${match[1]}...`);
         if (files[match[1]]) deleteFile(match[1]);
+        markDone(status, `Deleted ${match[1]}`);
     }
 
-    return contextAdded;
+    return { contextAdded };
 }
