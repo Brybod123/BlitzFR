@@ -670,7 +670,8 @@ async function updateModelStats() {
             { id: "openai/gpt-5.4-nano", name: "GPT 5.4 Nano" },
             { id: "moonshotai/kimi-k2.5", name: "Kimi K2.5" },
             { id: "kwaipilot/kat-coder-pro-v2", name: "KAT Coder Pro" },
-            { id: "x-ai/grok-code-fast-1", name: "Grok-Code Fast" }
+            { id: "x-ai/grok-code-fast-1", name: "Grok-Code Fast" },
+            { id: "google/gemini-3.1-flash-lite-preview", name: "Gemini 3.1 Flash Lite" }
         ];
 
 

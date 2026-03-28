@@ -37,7 +37,8 @@ export default async (req, context) => {
                 "openai/gpt-5.4-nano",
                 "moonshotai/kimi-k2.5",
                 "kwaipilot/kat-coder-pro-v2",
-                "x-ai/grok-code-fast-1"
+                "x-ai/grok-code-fast-1",
+                "google/gemini-3.1-flash-lite-preview"
             ];
 
             activityData.data.forEach(item => {
@@ -68,7 +69,8 @@ export default async (req, context) => {
             "openai/gpt-5.4-nano",
             "moonshotai/kimi-k2.5",
             "kwaipilot/kat-coder-pro-v2",
-            "x-ai/grok-code-fast-1"
+            "x-ai/grok-code-fast-1",
+            "google/gemini-3.1-flash-lite-preview"
         ];
         
         const prices = {};
