@@ -7,7 +7,8 @@
     <link rel="stylesheet" href="styles.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Bytesized&family=Jersey+10&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Bytesized&family=Jersey+10&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body class="editor-page">
     <div class="editor-container">
@@ -73,6 +74,18 @@
                 </div>
                 
                 <div id="ai-editor" class="ai-editor hidden">
+                    <div class="ai-credits-container">
+                        <div class="credits-bar-wrapper">
+                            <div id="credits-bar" class="credits-bar"></div>
+                        </div>
+                        <div class="credits-info">
+                            <span id="credits-text">Loading credits...</span>
+                            <button class="credits-about-btn" title="About Credits">?</button>
+                            <div class="credits-tooltip">
+                                This is the credits i currently have, i know your requests drain almost nothing out of it, but as long as the bar is green, requests stay free for everyone, depending on the color of the bar, limitd will be enforced to protect costs, the bar resets every week.
+                            </div>
+                        </div>
+                    </div>
                     <div class="chat-history" id="chat-history">
                         <div class="chat-message ai-message">
                             <span class="chat-avatar">AI</span>

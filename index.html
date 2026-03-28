@@ -16,7 +16,15 @@
     <h1>Blitz</h1>
 
     <button>Create</button>
-    <button class="help-btn">?</button>
+    <div class="credits-bar-container-mini">
+        <div class="credits-bar-wrapper mini">
+            <div id="credits-bar" class="credits-bar"></div>
+        </div>
+        <button class="credits-about-btn mini">?</button>
+        <div class="credits-tooltip">
+            This is the credits i currently have, i know your requests drain almost nothing out of it, but as long as the bar is green, requests stay free for everyone, depending on the color of the bar, limitd will be enforced to protect costs, the bar resets every week.
+        </div>
+    </div>
     
     <div class="modal-overlay" id="modal-overlay">
         <div class="modal">
@@ -27,6 +35,27 @@
     </div>
     
     <script src="button.js"></script>
+    <script>
+        // Fetch and render credits on homepage
+        async function updateCredits() {
+            try {
+                const res = await fetch('/api/credits');
+                const { credits } = await res.json();
+                const bar = document.getElementById('credits-bar');
+                
+                // Assuming max is 100 for percentage visualization?
+                // Scale 50 (black) to 100 (full green)
+                const percentage = Math.max(0, Math.min(100, (credits - 50) * 2));
+                bar.style.width = percentage + '%';
+                
+                if (credits <= 50) bar.style.background = 'black';
+                else if (credits <= 55) bar.style.background = '#ff4d4f'; // red
+                else if (credits <= 60) bar.style.background = '#f59e0b'; // yellow
+                else bar.style.background = '#10b981'; // green
+            } catch (e) {}
+        }
+        updateCredits();
+    </script>
 </body>
 
 </html>

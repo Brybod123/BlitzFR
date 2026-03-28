@@ -361,7 +361,7 @@ generateBtn.addEventListener('click', async () => {
     userMsg.className = 'chat-message user-message';
     userMsg.innerHTML = `
         <span class="chat-avatar">U</span>
-        <div class="chat-bubble">${promptText}</div>
+        <div class="chat-bubble">${marked.parse(promptText)}</div>
     `;
     chatHistory.appendChild(userMsg);
     promptArea.value = '';
@@ -466,7 +466,7 @@ function updateAiMessageUI(bubble, content) {
         const textBefore = content.substring(lastIndex, match.index);
         if (textBefore) {
             const span = document.createElement('span');
-            span.textContent = textBefore;
+            span.innerHTML = marked.parse(textBefore);
             bubble.appendChild(span);
         }
         
@@ -502,10 +502,40 @@ function updateAiMessageUI(bubble, content) {
     const remainingText = content.substring(lastIndex);
     if (remainingText) {
         const span = document.createElement('span');
-        span.textContent = remainingText;
+        span.innerHTML = marked.parse(remainingText);
         bubble.appendChild(span);
     }
 }
+
+// Credits Logic
+async function updateCredits() {
+    try {
+        const res = await fetch('/api/credits');
+        const { credits } = await res.json();
+        const bar = document.getElementById('credits-bar');
+        const text = document.getElementById('credits-text');
+        
+        // Visualization: Scale 50-100 to 0-100%
+        const percentage = Math.max(0, Math.min(100, (credits - 50) * 2));
+        bar.style.width = percentage + '%';
+        text.textContent = `$${credits.toFixed(2)} credits remaining`;
+        
+        if (credits <= 50) {
+            bar.style.background = 'black';
+            generateBtn.disabled = true;
+            generateBtn.textContent = 'Credits Depleted';
+        } else if (credits <= 55) {
+            bar.style.background = '#ff4d4f'; // red
+        } else if (credits <= 60) {
+            bar.style.background = '#f59e0b'; // yellow
+        } else {
+            bar.style.background = '#10b981'; // green
+        }
+    } catch (e) {
+        console.error("Credits fetch failed", e);
+    }
+}
+updateCredits();
 
 function createToolCard(text, isDone) {
     const card = document.createElement('div');
