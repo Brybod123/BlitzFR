@@ -10,6 +10,8 @@ const fileExplorer = document.getElementById('file-explorer');
 const fileList = document.getElementById('file-list');
 const btnNewFile = document.getElementById('btn-new-file');
 
+let chatMessages = [{ role: 'system', content: 'You are an advanced AI coding assistant in the Blitz IDE.' }];
+
 // Define initial contents
 const initialHtml = `<div class="main-container">
     <h1 class="heading">My First Blitz Website</h1>
@@ -264,10 +266,12 @@ promptArea.addEventListener('keydown', (e) => {
     }
 });
 
-// AI Generation Simulation
-generateBtn.addEventListener('click', () => {
+// AI Generation Logic
+generateBtn.addEventListener('click', async () => {
     const promptText = promptArea.value.trim();
     if (!promptText) return;
+
+    chatMessages.push({ role: 'user', content: promptText });
 
     // Append user message
     const userMsg = document.createElement('div');
@@ -290,24 +294,55 @@ generateBtn.addEventListener('click', () => {
     chatHistory.scrollTop = chatHistory.scrollHeight;
 
     generateBtn.disabled = true;
+    const bubble = aiMsg.querySelector('.chat-bubble');
 
-    // Simulate AI response
-    setTimeout(() => {
-        // Just mock updating index.html or styles.css for the demo
-        if (files['index.html']) {
-            files['index.html'].model.setValue(`<div class="result-container">\n    <h2 class="result-heading">Generated Result</h2>\n    <p class="echo">You asked for: ${promptText}</p>\n    <button class="action-btn">Generated Button</button>\n</div>`);
+    try {
+        const response = await fetch('/api/chat', {
+            method: 'POST',
+            body: JSON.stringify({ messages: chatMessages })
+        });
+
+        if (!response.ok) {
+            bubble.textContent = "Error communicating with AI.";
+            generateBtn.disabled = false;
+            return;
         }
-        if (files['styles.css']) {
-            files['styles.css'].model.setValue(`.result-container {\n    display: flex;\n    flex-direction: column;\n    align-items: center;\n    gap: 30px;\n    font-family: sans-serif;\n}\n.result-heading {\n    color: #00ff88;\n}\n.echo {\n    color: #888888;\n}\n.action-btn {\n    background: #00ff88;\n    color: #000;\n    border: none;\n    padding: 15px 30px;\n    border-radius: 20px;\n    font-weight: bold;\n    cursor: pointer;\n}`);
-        }
-        if (files['script.js']) {
-            files['script.js'].model.setValue(`document.querySelector('.action-btn')?.addEventListener('click', function() {\n    this.textContent = 'Action trigger!';\n});`);
+
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder("utf-8");
+        let aiContent = "";
+        bubble.textContent = "";
+
+        while (true) {
+            const { value, done } = await reader.read();
+            if (done) break;
+
+            const chunk = decoder.decode(value, { stream: true });
+            const lines = chunk.split('\n');
+
+            for (const line of lines) {
+                if (line.startsWith('data: ')) {
+                    const dataStr = line.slice(6).trim();
+                    if (dataStr === '[DONE]') break;
+                    try {
+                        const json = JSON.parse(dataStr);
+                        if (json.choices && json.choices[0].delta && json.choices[0].delta.content) {
+                            aiContent += json.choices[0].delta.content;
+                            bubble.textContent = aiContent;
+                            chatHistory.scrollTop = chatHistory.scrollHeight;
+                        }
+                    } catch (e) {
+                        // ignore malformed chunks
+                    }
+                }
+            }
         }
         
-        // Update AI message
-        aiMsg.querySelector('.chat-bubble').textContent = "I've generated the code for you! Your live preview has been updated. You can check the file tree to review or edit the files.";
-        chatHistory.scrollTop = chatHistory.scrollHeight;
-        
-        generateBtn.disabled = false;
-    }, 1500);
+        chatMessages.push({ role: 'assistant', content: aiContent });
+    } catch (err) {
+        console.error(err);
+        bubble.textContent = "Connection error.";
+    }
+
+    generateBtn.disabled = false;
 });
