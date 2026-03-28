@@ -144,7 +144,7 @@
         require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.46.0/min/vs' }});
         require(['vs/editor/editor.main'], function() {
             const script = document.createElement('script');
-            script.src = 'editor.js';
+            script.src = 'editor.js?v=' + Date.now();
             document.body.appendChild(script);
         });
     </script>
