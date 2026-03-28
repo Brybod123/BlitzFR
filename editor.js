@@ -641,8 +641,8 @@ function getRemainingHourlyRequests(modelId) {
 
     if (balance < 50) return 0;
 
-    // Theoretical hourly budget of $0.01
-    const hourlyBudget = 0.01;
+    // Theoretical hourly budget of $0.03
+    const hourlyBudget = 0.03;
     const limit = Math.max(1, Math.floor(hourlyBudget / estCost));
     return Math.max(0, limit - state.count);
 }
