@@ -1582,6 +1582,18 @@ body[data-theme="light"] .credits-bar-wrapper {
     letter-spacing: 0.06em;
 }
 
+.project-owner-link {
+    color: #00ffff;
+    font-family: 'VT323', monospace;
+    font-size: 1rem;
+    margin: 6px 0 0;
+    text-decoration: none;
+}
+
+.project-owner-link:hover {
+    text-decoration: underline;
+}
+
 .project-info h3 {
     margin: 0 0 6px 0;
     font-family: 'VT323', monospace;
@@ -1693,6 +1705,34 @@ body[data-theme="light"] .credits-bar-wrapper {
     text-shadow: 0 0 6px rgba(0, 255, 255, 0.3);
     padding-left: 16px;
     border-left: 2px solid #30363d;
+}
+
+.profile-hero {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 28px;
+}
+
+.profile-hero h2 {
+    font-family: 'Jersey 10', sans-serif;
+    font-size: 2.4rem;
+    color: #ffffff;
+    margin: 0 0 4px;
+}
+
+.profile-hero p {
+    margin: 0;
+    color: #7b8697;
+    font-family: 'VT323', monospace;
+    font-size: 1.1rem;
+}
+
+.profile-avatar-wrap {
+    width: 64px;
+    height: 64px;
+    overflow: hidden;
+    border: 2px solid #30363d;
 }
 
 .viewer-header-right {

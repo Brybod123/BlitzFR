@@ -236,6 +236,7 @@
         const db = getDatabase(app);
         const tierBudgets = { basic: 0.03, gold: 0.04, diamond: 0.05 };
         let currentUserProfile = { gifted_budget: 0, tier: 'basic' };
+        const userProfileCache = new Map();
         const headerAction = document.getElementById('header-auth-action');
         const headerActionLabel = document.getElementById('header-auth-action-label');
         const createEntryCard = document.getElementById('create-entry-card');
@@ -293,6 +294,15 @@
             await set(userRef, payload);
             currentUserProfile = { gifted_budget: payload.gifted_budget, tier: payload.tier };
             return currentUserProfile;
+        }
+
+        async function getUserProfile(uid) {
+            if (!uid) return null;
+            if (userProfileCache.has(uid)) return userProfileCache.get(uid);
+            const snapshot = await get(ref(db, 'users/' + uid));
+            const profile = snapshot.exists() ? snapshot.val() : null;
+            userProfileCache.set(uid, profile);
+            return profile;
         }
 
         function getHourlyUsage() {
@@ -374,7 +384,7 @@
             listViewBtn.classList.toggle('active', currentView === 'list');
         }
 
-        function renderProjects() {
+        async function renderProjects() {
             const createCard = document.getElementById('create-entry-card');
             projectGrid.innerHTML = '';
             if (createCard) projectGrid.appendChild(createCard);
@@ -394,7 +404,7 @@
                 projects.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
             }
 
-            projects.forEach(project => {
+            for (const project of projects) {
                 const card = document.createElement('div');
                 card.className = 'project-card';
                 card.onclick = () => window.location.href = 'viewer.html?project=' + project.id;
@@ -423,6 +433,16 @@
                     info.appendChild(source);
                 }
 
+                if (project.ownerUid) {
+                    const ownerProfile = await getUserProfile(project.ownerUid);
+                    const ownerLink = document.createElement('a');
+                    ownerLink.className = 'project-owner-link';
+                    ownerLink.href = 'profile.html?user=' + project.ownerUid;
+                    ownerLink.textContent = 'By ' + (ownerProfile?.displayName || ownerProfile?.email || 'Unknown user');
+                    ownerLink.addEventListener('click', (event) => event.stopPropagation());
+                    info.appendChild(ownerLink);
+                }
+
                 const updated = document.createElement('p');
                 updated.textContent = 'Updated ' + timeAgo;
                 info.appendChild(updated);
@@ -430,7 +450,7 @@
                 card.appendChild(preview);
                 card.appendChild(info);
                 projectGrid.appendChild(card);
-            });
+            }
         }
 
         function renderAccount(user) {

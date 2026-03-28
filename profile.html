@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blitz - Creator Profile</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Bytesized&family=Jersey+10&family=VT323&display=swap" rel="stylesheet">
+</head>
+<body class="dashboard-page">
+    <div class="dashboard-header">
+        <div class="header-left">
+            <a href="index.html" style="display:flex; align-items:center; gap:0.75rem; text-decoration:none; color:inherit;">
+                <img src="logo.svg" alt="Blitz Logo" class="dashboard-logo">
+                <h1 style="font-family:'Jersey 10'; margin:0; font-size:2.2rem; letter-spacing:1px;">BLITZ</h1>
+            </a>
+        </div>
+        <div class="header-center"></div>
+        <div class="header-right">
+            <a class="btn-create" href="index.html" style="text-decoration:none;">Back</a>
+        </div>
+    </div>
+
+    <main class="dashboard-main">
+        <div class="profile-hero">
+            <div class="profile-avatar-wrap">
+                <img id="profile-avatar" class="account-avatar hidden" alt="Profile">
+                <span id="profile-avatar-fallback" class="account-avatar-fallback account-avatar-fallback-lg">?</span>
+            </div>
+            <div>
+                <h2 id="profile-name">Loading...</h2>
+                <p id="profile-email">Fetching creator</p>
+            </div>
+        </div>
+
+        <div class="dashboard-toolbar">
+            <h2>Projects <span id="profile-project-count">0 found</span></h2>
+        </div>
+
+        <div class="project-grid" id="profile-project-grid"></div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getDatabase, get, ref } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyDz4P07G-B05SqCMyDdCnIyRAJNy19_1oQ",
+            authDomain: "blitz-6c88c.firebaseapp.com",
+            databaseURL: "https://blitz-6c88c-default-rtdb.firebaseio.com",
+            projectId: "blitz-6c88c",
+            storageBucket: "blitz-6c88c.firebasestorage.app",
+            messagingSenderId: "390946741291",
+            appId: "1:390946741291:web:e6ae60970e2847403d9e6e",
+            measurementId: "G-WC5KP3MXP9"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const params = new URLSearchParams(window.location.search);
+        const userId = params.get('user');
+
+        function setAvatar(imgEl, fallbackEl, user) {
+            const label = (user?.displayName || user?.email || 'Unknown').trim();
+            const initial = label.charAt(0).toUpperCase() || '?';
+            if (user?.photoURL) {
+                imgEl.src = user.photoURL;
+                imgEl.classList.remove('hidden');
+                fallbackEl.classList.add('hidden');
+            } else {
+                imgEl.classList.add('hidden');
+                fallbackEl.textContent = initial;
+                fallbackEl.classList.remove('hidden');
+            }
+        }
+
+        function getTimeAgo(ts) {
+            if (!ts) return 'recently';
+            const s = Math.floor((Date.now() - ts) / 1000);
+            if (s < 60) return 'just now';
+            if (s < 3600) return Math.floor(s / 60) + 'm ago';
+            if (s < 86400) return Math.floor(s / 3600) + 'h ago';
+            return Math.floor(s / 86400) + 'd ago';
+        }
+
+        async function loadProfile() {
+            if (!userId) {
+                document.getElementById('profile-name').textContent = 'Missing user';
+                return;
+            }
+
+            const [userSnapshot, projectsSnapshot] = await Promise.all([
+                get(ref(db, 'users/' + userId)),
+                get(ref(db, 'projects'))
+            ]);
+
+            const user = userSnapshot.exists() ? userSnapshot.val() : null;
+            document.getElementById('profile-name').textContent = user?.displayName || 'Unknown creator';
+            document.getElementById('profile-email').textContent = user?.email || 'No public email';
+            setAvatar(
+                document.getElementById('profile-avatar'),
+                document.getElementById('profile-avatar-fallback'),
+                user
+            );
+
+            const allProjects = projectsSnapshot.exists() ? Object.entries(projectsSnapshot.val()).map(([id, p]) => ({ id, ...p })) : [];
+            const projects = allProjects
+                .filter(project => project.ownerUid === userId)
+                .sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+            document.getElementById('profile-project-count').textContent = `${projects.length} found`;
+
+            const grid = document.getElementById('profile-project-grid');
+            projects.forEach(project => {
+                const card = document.createElement('div');
+                card.className = 'project-card';
+                card.onclick = () => window.location.href = 'viewer.html?project=' + project.id;
+
+                const preview = document.createElement('div');
+                preview.className = 'project-preview';
+                if (project.thumbnail) {
+                    preview.style.backgroundImage = 'url(' + project.thumbnail + ')';
+                    preview.style.backgroundSize = 'cover';
+                    preview.style.backgroundPosition = 'center top';
+                } else {
+                    preview.classList.add('skeleton');
+                }
+
+                const info = document.createElement('div');
+                info.className = 'project-info';
+                const title = document.createElement('h3');
+                title.textContent = project.name || 'Untitled Project';
+                const updated = document.createElement('p');
+                updated.textContent = 'Updated ' + getTimeAgo(project.updatedAt);
+                info.append(title, updated);
+                card.append(preview, info);
+                grid.appendChild(card);
+            });
+        }
+
+        loadProfile().catch((error) => {
+            console.error(error);
+            document.getElementById('profile-name').textContent = 'Load error';
+        });
+    </script>
+</body>
+</html>

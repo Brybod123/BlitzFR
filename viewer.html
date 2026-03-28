@@ -19,6 +19,7 @@
             <div style="display:flex; flex-direction:column; gap:0.2rem;">
                 <span class="viewer-project-name" id="project-name">Loading...</span>
                 <span id="project-source" style="display:none; font-family:'VT323', monospace; font-size:1rem; color:#8ab4ff; text-transform:uppercase; letter-spacing:0.08em;"></span>
+                <a id="project-owner-link" href="#" style="display:none; font-family:'VT323', monospace; font-size:1rem; color:#00ffff; text-decoration:none; letter-spacing:0.04em;"></a>
             </div>
         </div>
         <div class="viewer-header-right">
@@ -95,6 +96,14 @@
                     sourceEl.style.display = 'block';
                 } else {
                     sourceEl.style.display = 'none';
+                }
+                if (data.ownerUid) {
+                    const ownerSnapshot = await get(ref(db, 'users/' + data.ownerUid));
+                    const ownerData = ownerSnapshot.exists() ? ownerSnapshot.val() : null;
+                    const ownerLink = document.getElementById('project-owner-link');
+                    ownerLink.textContent = 'By ' + (ownerData?.displayName || ownerData?.email || 'Unknown user');
+                    ownerLink.href = 'profile.html?user=' + data.ownerUid;
+                    ownerLink.style.display = 'inline';
                 }
 
                 // Decode files
