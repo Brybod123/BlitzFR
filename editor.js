@@ -557,6 +557,36 @@ function updateAiMessageUI(bubble, content) {
 
 let globalCredits = 100;
 
+// Console Debug Tools
+window.setBalance = (num) => {
+    globalCredits = num;
+    console.log(`DEBUG: balance set to $${num}. Updating UI...`);
+    
+    // Manually trigger UI update logic similar to updateCredits but with mock value
+    const bar = document.getElementById('credits-bar');
+    const text = document.getElementById('credits-text');
+    const percentage = Math.max(0, Math.min(100, num));
+    bar.style.width = percentage + '%';
+    text.textContent = `$${num.toFixed(2)} (MOCK) credits remaining`;
+    
+    if (num <= 50) {
+        bar.style.background = 'black';
+        generateBtn.disabled = true;
+        generateBtn.textContent = 'Credits Depleted';
+    } else {
+        bar.style.background = '#10b981';
+        generateBtn.disabled = false;
+        generateBtn.textContent = 'Generate';
+    }
+    calculateEstimatedCost(dropdownTrigger.dataset.value);
+};
+
+window.resetHourlyLimit = () => {
+    localStorage.removeItem('blitz_hourly_limit');
+    console.log("DEBUG: Hourly limit reset.");
+    calculateEstimatedCost(dropdownTrigger.dataset.value);
+};
+
 // Credits Logic
 async function updateCredits() {
     try {
