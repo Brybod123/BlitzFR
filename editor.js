@@ -354,7 +354,14 @@ generateBtn.addEventListener('click', async () => {
     const promptText = promptArea.value.trim();
     if (!promptText) return;
 
+    const remaining = getRemainingHourlyRequests(dropdownTrigger.dataset.value || "qwen/qwen3.5-flash-02-23");
+    if (remaining <= 0) {
+        alert("Hourly message limit reached for this specific model. Switch to a cheaper model or wait until the next hour.");
+        return;
+    }
+
     chatMessages.push({ role: 'user', content: promptText });
+    incrementHourlyRequests();
 
     // Append user message
     const userMsg = document.createElement('div');
@@ -605,6 +612,37 @@ function formatSigDigit(n) {
     return (Math.floor(n * power) / power).toFixed(d);
 }
 
+// Hourly Limit Tracking
+function getHourlyState() {
+    const now = Date.now();
+    let state = JSON.parse(localStorage.getItem('blitz_hourly_limit') || '{}');
+    if (!state.ts || (now - state.ts) > 3600000) { // reset every 1 hour
+        state = { ts: now, count: 0 };
+    }
+    return state;
+}
+
+function incrementHourlyRequests() {
+    const state = getHourlyState();
+    state.count++;
+    localStorage.setItem('blitz_hourly_limit', JSON.stringify(state));
+    calculateEstimatedCost(dropdownTrigger.dataset.value);
+}
+
+function getRemainingHourlyRequests(modelId) {
+    const state = getHourlyState();
+    const pricePerToken = parseFloat(modelPrices[modelId]) || 0.000005; // fallback
+    const estCost = avgTokens * pricePerToken;
+    const balance = globalCredits - globalUsage;
+    
+    if (balance < 50) return 0;
+    
+    // Theoretical hourly budget of $0.01
+    const hourlyBudget = 0.01;
+    const limit = Math.max(1, Math.floor(hourlyBudget / estCost));
+    return Math.max(0, limit - state.count);
+}
+
 async function updateModelStats() {
     try {
         const res = await fetch('/api/stats');
@@ -660,6 +698,13 @@ function calculateEstimatedCost(modelId) {
     const estCost = formatSigDigit(avgTokens * pricePerToken);
     console.log(`Calculating cost for ${modelId}: ${avgTokens.toFixed(0)} avg tokens * ${pricePerToken.toFixed(9)} price = $${estCost}`);
     document.getElementById('avg-cost-val').textContent = `$${estCost}`;
+    
+    // Update Hourly Remaining
+    const remaining = getRemainingHourlyRequests(modelId);
+    document.getElementById('remaining-msgs-val').textContent = remaining;
+    generateBtn.disabled = (remaining <= 0);
+    generateBtn.style.opacity = (remaining <= 0) ? "0.3" : "1";
+    generateBtn.style.cursor = (remaining <= 0) ? "not-allowed" : "pointer";
 }
 
 updateModelStats();

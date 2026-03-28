@@ -817,9 +817,17 @@ body.editor-page {
     font-family: 'Inter', sans-serif;
 }
 
-#avg-cost-val {
-    color: #64748b;
-    font-weight: 500;
+.hourly-limit-label {
+    font-size: 10px;
+    color: #b45309; /* amber-700 */
+    align-self: flex-start;
+    margin-left: 20px;
+    font-family: 'Inter', sans-serif;
+    margin-top: 2px;
+}
+
+#remaining-msgs-val {
+    font-weight: 600;
 }
 
 
