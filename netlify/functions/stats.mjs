@@ -38,7 +38,8 @@ export default async (req, context) => {
                 "moonshotai/kimi-k2.5",
                 "kwaipilot/kat-coder-pro-v2",
                 "x-ai/grok-code-fast-1",
-                "google/gemini-3.1-flash-lite-preview"
+                "google/gemini-3.1-flash-lite-preview",
+                "xiaomi/mimo-v2-flash"
             ];
 
             activityData.data.forEach(item => {
@@ -70,7 +71,8 @@ export default async (req, context) => {
             "moonshotai/kimi-k2.5",
             "kwaipilot/kat-coder-pro-v2",
             "x-ai/grok-code-fast-1",
-            "google/gemini-3.1-flash-lite-preview"
+            "google/gemini-3.1-flash-lite-preview",
+            "xiaomi/mimo-v2-flash"
         ];
         
         const prices = {};
