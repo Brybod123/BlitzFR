@@ -27,12 +27,12 @@
         </div>
 
         <div class="header-right">
-            <button class="btn-create" onclick="window.location.href='editor.html'">
+            <button class="btn-create" id="header-auth-action">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
-                New Project
+                <span id="header-auth-action-label">Sign In</span>
             </button>
             <div class="credits-bar-container-mini" title="Global Credits">
                 <div class="credits-bar-wrapper mini">
@@ -74,15 +74,15 @@
         </div>
 
         <div class="project-grid">
-            <div class="project-card create-new-card" onclick="window.location.href='editor.html'">
+            <div class="project-card create-new-card" id="create-entry-card">
                 <div class="create-icon">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
                 </div>
-                <h3>Create New Project</h3>
-                <p>Start a blank app</p>
+                <h3 id="create-entry-title">Sign In</h3>
+                <p id="create-entry-copy">Authenticate to start a project</p>
             </div>
 
             <div class="project-card">
@@ -172,6 +172,7 @@
     </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
@@ -188,7 +189,46 @@
 
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
+        const auth = getAuth(app);
         const db = getDatabase(app);
+        const headerAction = document.getElementById('header-auth-action');
+        const headerActionLabel = document.getElementById('header-auth-action-label');
+        const createEntryCard = document.getElementById('create-entry-card');
+        const createEntryTitle = document.getElementById('create-entry-title');
+        const createEntryCopy = document.getElementById('create-entry-copy');
+
+        function routeToEditor() {
+            window.location.href = 'editor.html';
+        }
+
+        async function beginSignIn() {
+            try {
+                await signInAnonymously(auth);
+            } catch (error) {
+                console.error("Homepage auth failed:", error);
+            }
+        }
+
+        function renderCreateEntry(user) {
+            if (user) {
+                headerActionLabel.textContent = 'New Project';
+                createEntryTitle.textContent = 'Create New Project';
+                createEntryCopy.textContent = 'Start a blank app';
+                headerAction.onclick = routeToEditor;
+                createEntryCard.onclick = routeToEditor;
+                return;
+            }
+
+            headerActionLabel.textContent = 'Sign In';
+            createEntryTitle.textContent = 'Sign In';
+            createEntryCopy.textContent = 'Authenticate to start a project';
+            headerAction.onclick = beginSignIn;
+            createEntryCard.onclick = beginSignIn;
+        }
+
+        onAuthStateChanged(auth, (user) => {
+            renderCreateEntry(user);
+        });
 
         // Load community projects from RTDB in real-time
         const projectsRef = ref(db, 'projects');
