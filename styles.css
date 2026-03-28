@@ -1331,6 +1331,95 @@ body[data-theme="light"] .project-preview.skeleton {
     background: #eef5ff;
 }
 
+body[data-theme="light"] .ai-editor,
+body[data-theme="light"] .ai-credits-container,
+body[data-theme="light"] .chat-input-wrapper,
+body[data-theme="light"] .chat-input-inner,
+body[data-theme="light"] .chat-bubble,
+body[data-theme="light"] .chat-message.user-message .chat-bubble,
+body[data-theme="light"] .model-dropdown-trigger,
+body[data-theme="light"] .model-dropdown-list,
+body[data-theme="light"] .modal,
+body[data-theme="light"] #monaco-diff-container,
+body[data-theme="light"] .diff-header,
+body[data-theme="light"] .tool-status-card,
+body[data-theme="light"] .chat-avatar {
+    background: #f8fbff;
+    border-color: #c6d8ee;
+    color: #334155;
+}
+
+body[data-theme="light"] .ai-credits-container,
+body[data-theme="light"] .chat-input-wrapper,
+body[data-theme="light"] .modal-header,
+body[data-theme="light"] .diff-header,
+body[data-theme="light"] .code-tabs,
+body[data-theme="light"] .file-explorer {
+    border-color: #c6d8ee;
+}
+
+body[data-theme="light"] .chat-history,
+body[data-theme="light"] .editor-main,
+body[data-theme="light"] .code-layout,
+body[data-theme="light"] .editor-area {
+    background: #f8fbff;
+}
+
+body[data-theme="light"] .chat-bubble,
+body[data-theme="light"] .modal-body p,
+body[data-theme="light"] .prompt-area,
+body[data-theme="light"] .file-item,
+body[data-theme="light"] .model-option,
+body[data-theme="light"] #credits-text,
+body[data-theme="light"] .cost-estimate-label,
+body[data-theme="light"] .hourly-limit-label,
+body[data-theme="light"] .modal-close,
+body[data-theme="light"] .diff-header,
+body[data-theme="light"] .tool-status-card {
+    color: #475569;
+}
+
+body[data-theme="light"] .chat-message.user-message .chat-bubble,
+body[data-theme="light"] .chat-message.user-message .chat-avatar,
+body[data-theme="light"] .btn-generate {
+    background: #dbeafe;
+    border-color: #93c5fd;
+    color: #1d4ed8;
+}
+
+body[data-theme="light"] .btn-generate:hover,
+body[data-theme="light"] .model-option:hover,
+body[data-theme="light"] .file-item:hover,
+body[data-theme="light"] .chat-input-inner:focus-within {
+    background: #eaf3ff;
+}
+
+body[data-theme="light"] .model-label,
+body[data-theme="light"] .modal-header h3,
+body[data-theme="light"] .code-tab.active,
+body[data-theme="light"] .icon-nav-btn.active {
+    color: #0369a1;
+}
+
+body[data-theme="light"] .code-tab,
+body[data-theme="light"] .icon-nav-btn,
+body[data-theme="light"] .file-item-delete,
+body[data-theme="light"] .prompt-area::placeholder {
+    color: #64748b;
+}
+
+body[data-theme="light"] .chat-bubble code {
+    background: rgba(148, 163, 184, 0.18);
+}
+
+body[data-theme="light"] .chat-bubble pre {
+    background: #e2e8f0;
+}
+
+body[data-theme="light"] .credits-bar-wrapper {
+    background: #dbeafe;
+}
+
 .dashboard-main {
     flex: 1;
     padding: 32px 48px;
