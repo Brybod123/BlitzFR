@@ -351,8 +351,15 @@ promptArea.addEventListener('keydown', (e) => {
 
 // AI Generation Logic
 generateBtn.addEventListener('click', async () => {
+    if (generateBtn.disabled) return;
+    
     const promptText = promptArea.value.trim();
     if (!promptText) return;
+
+    if (globalCredits <= 50) {
+        alert("Global credits depleted. Messages are disabled until the balance is restored.");
+        return;
+    }
 
     const remaining = getRemainingHourlyRequests(dropdownTrigger.dataset.value || "qwen/qwen3.5-flash-02-23");
     if (remaining <= 0) {
