@@ -216,6 +216,26 @@ window.addEventListener('firebase-auth-ready', () => {
 
 updateSaveButtonState();
 
+async function getHtml2Canvas() {
+    if (typeof window.html2canvas === 'function') return window.html2canvas;
+
+    return new Promise((resolve, reject) => {
+        const startedAt = Date.now();
+        const timer = setInterval(() => {
+            if (typeof window.html2canvas === 'function') {
+                clearInterval(timer);
+                resolve(window.html2canvas);
+                return;
+            }
+
+            if (Date.now() - startedAt > 5000) {
+                clearInterval(timer);
+                reject(new Error('html2canvas failed to load.'));
+            }
+        }, 50);
+    });
+}
+
 function showDiff(filename, oldContent, newContent) {
     const originalModel = monaco.editor.createModel(oldContent, files[filename].lang);
     const modifiedModel = monaco.editor.createModel(newContent, files[filename].lang);
@@ -1183,6 +1203,8 @@ async function captureThumbnail() {
 
     try {
         console.log('[thumbnail] capture start', { currentPreviewPage, fileCount: Object.keys(files).length });
+        const html2canvasLib = await getHtml2Canvas();
+        console.log('[thumbnail] html2canvas ready');
         const rendered = buildRenderableHtml(currentPreviewPage);
         console.log('[thumbnail] renderable html ready', {
             page: rendered.pageToLoad,
@@ -1229,7 +1251,7 @@ async function captureThumbnail() {
         await Promise.all(assetLoads);
         console.log('[thumbnail] assets settled', { imageCount: (iframeDoc.images || []).length });
 
-        const canvas = await html2canvas(iframeDoc.documentElement, {
+        const canvas = await html2canvasLib(iframeDoc.documentElement, {
             width: 400,
             height: 300,
             scale: 1,
