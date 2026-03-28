@@ -299,29 +299,32 @@ document.addEventListener('DOMContentLoaded', () => {
     animateSmoke();
     
     // ========== MODAL FUNCTIONALITY ==========
-    const helpBtn = document.querySelector('.help-btn');
-    const modalOverlay = document.getElementById('modal-overlay');
-    const modalClose = document.querySelector('.modal-close');
+    const helpBtn = document.getElementById('btn-help');
+    const goalModal = document.getElementById('modal-overlay');
+    const goalClose = goalModal?.querySelector('.modal-close');
     
-    if (helpBtn && modalOverlay) {
+    if (helpBtn && goalModal) {
         helpBtn.addEventListener('click', () => {
-            modalOverlay.classList.add('active');
+            goalModal.classList.remove('hidden');
+            goalModal.classList.add('active'); // if active is used in button.js logic
         });
         
-        modalClose.addEventListener('click', () => {
-            modalOverlay.classList.remove('active');
+        goalClose?.addEventListener('click', () => {
+            goalModal.classList.add('hidden');
+            goalModal.classList.remove('active');
         });
         
-        modalOverlay.addEventListener('click', (e) => {
-            if (e.target === modalOverlay) {
-                modalOverlay.classList.remove('active');
+        goalModal.addEventListener('click', (e) => {
+            if (e.target === goalModal) {
+                goalModal.classList.add('hidden');
+                goalModal.classList.remove('active');
             }
         });
     }
     
     // Create button navigation
-    const createBtn = document.querySelector('button:not(.help-btn):not(.modal-close)');
-    if (createBtn && createBtn.textContent === 'Create') {
+    const createBtn = Array.from(document.querySelectorAll('button')).find(b => b.textContent.includes('Create'));
+    if (createBtn) {
         createBtn.addEventListener('click', () => {
             window.location.href = 'editor.html';
         });
