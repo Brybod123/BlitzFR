@@ -593,6 +593,7 @@ async function updateModelStats() {
     try {
         const res = await fetch('/api/stats');
         const data = await res.json();
+        console.log("MARKET STATS FETCHED:", data);
         avgTokens = data.avgTokens || 1000;
         modelPrices = data.prices || {};
         
@@ -639,6 +640,7 @@ async function updateModelStats() {
 function calculateEstimatedCost(modelId) {
     const pricePerToken = parseFloat(modelPrices[modelId]) || 0;
     const estCost = formatSigDigit(avgTokens * pricePerToken);
+    console.log(`Calculating cost for ${modelId}: ${avgTokens.toFixed(0)} avg tokens * ${pricePerToken.toFixed(9)} price = $${estCost}`);
     document.getElementById('avg-cost-val').textContent = `$${estCost}`;
 }
 
