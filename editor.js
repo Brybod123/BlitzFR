@@ -1325,16 +1325,21 @@ async function saveProject() {
         name: projectName,
         files: fileData,
         updatedAt: Date.now(),
-        thumbnail: thumbnail || null,
         forkedFrom: forkSourceProject,
         ownerUid: currentUser.uid
     };
+    console.log('[thumbnail] project payload prepared', {
+        projectName,
+        hasThumbnail: Boolean(thumbnail),
+        payloadKeys: Object.keys(projectPayload)
+    });
 
     try {
+        let projectRef;
         if (currentProjectId) {
             // Update existing project
-            const projRef = window.firebaseRef(window.firebaseDB, 'projects/' + currentProjectId);
-            await window.firebaseSet(projRef, projectPayload);
+            projectRef = window.firebaseRef(window.firebaseDB, 'projects/' + currentProjectId);
+            await window.firebaseSet(projectRef, projectPayload);
             currentProjectOwnerUid = currentUser.uid;
             console.log("Project updated:", currentProjectId);
         } else {
@@ -1342,12 +1347,23 @@ async function saveProject() {
             const projListRef = window.firebaseRef(window.firebaseDB, 'projects');
             const newRef = window.firebasePush(projListRef);
             currentProjectId = newRef.key;
-            await window.firebaseSet(newRef, projectPayload);
+            projectRef = newRef;
+            await window.firebaseSet(projectRef, projectPayload);
             currentProjectOwnerUid = currentUser.uid;
             // Update URL so refreshes keep the project loaded
             history.replaceState(null, '', 'editor.html?project=' + currentProjectId);
             console.log("Project created:", currentProjectId);
         }
+
+        if (thumbnail) {
+            const thumbnailRef = window.firebaseRef(window.firebaseDB, `projects/${currentProjectId}/thumbnail`);
+            await window.firebaseSet(thumbnailRef, thumbnail);
+            const thumbnailSnapshot = await window.firebaseGet(thumbnailRef);
+            console.log('[thumbnail] persisted verification', thumbnailSnapshot.exists()
+                ? { exists: true, length: String(thumbnailSnapshot.val()).length }
+                : { exists: false });
+        }
+
         updateSaveButtonState();
         alert("Project saved!");
     } catch (e) {
