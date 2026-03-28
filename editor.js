@@ -1182,7 +1182,13 @@ async function captureThumbnail() {
     captureRoot.style.background = '#ffffff';
 
     try {
+        console.log('[thumbnail] capture start', { currentPreviewPage, fileCount: Object.keys(files).length });
         const rendered = buildRenderableHtml(currentPreviewPage);
+        console.log('[thumbnail] renderable html ready', {
+            page: rendered.pageToLoad,
+            assetCount: Object.keys(rendered.assetUrls).length,
+            htmlLength: rendered.htmlContent.length
+        });
         const captureFrame = document.createElement('iframe');
         captureFrame.style.width = '400px';
         captureFrame.style.height = '300px';
@@ -1192,16 +1198,24 @@ async function captureThumbnail() {
         document.body.appendChild(captureRoot);
 
         const htmlBlobUrl = URL.createObjectURL(new Blob([rendered.htmlContent], { type: 'text/html' }));
+        console.log('[thumbnail] blob url created');
 
         await new Promise((resolve) => {
-            captureFrame.onload = () => setTimeout(resolve, 400);
+            captureFrame.onload = () => {
+                console.log('[thumbnail] iframe loaded');
+                setTimeout(resolve, 400);
+            };
             captureFrame.src = htmlBlobUrl;
         });
 
         const iframeDoc = captureFrame.contentDocument || captureFrame.contentWindow?.document;
-        if (!iframeDoc?.documentElement) return null;
+        if (!iframeDoc?.documentElement) {
+            console.warn('[thumbnail] iframe document missing');
+            return null;
+        }
 
         if (iframeDoc.fonts?.ready) {
+            console.log('[thumbnail] waiting for fonts');
             await iframeDoc.fonts.ready.catch(() => {});
         }
 
@@ -1213,6 +1227,7 @@ async function captureThumbnail() {
             });
         });
         await Promise.all(assetLoads);
+        console.log('[thumbnail] assets settled', { imageCount: (iframeDoc.images || []).length });
 
         const canvas = await html2canvas(iframeDoc.documentElement, {
             width: 400,
@@ -1222,10 +1237,13 @@ async function captureThumbnail() {
             backgroundColor: '#ffffff',
             logging: false
         });
+        console.log('[thumbnail] html2canvas complete', { width: canvas.width, height: canvas.height });
 
         URL.revokeObjectURL(htmlBlobUrl);
         Object.values(rendered.assetUrls).forEach(URL.revokeObjectURL);
-        return canvas.toDataURL('image/jpeg', 0.4);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.4);
+        console.log('[thumbnail] data url generated', { length: dataUrl.length });
+        return dataUrl;
     } catch (e) {
         console.warn("Thumbnail capture failed:", e);
         return null;
@@ -1278,6 +1296,7 @@ async function saveProject() {
     if (!projectName) return;
 
     const thumbnail = await captureThumbnail();
+    console.log('[thumbnail] save payload thumbnail result', thumbnail ? { length: thumbnail.length } : null);
     const fileData = serializeFiles();
 
     const projectPayload = {
