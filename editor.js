@@ -1184,7 +1184,6 @@ async function captureThumbnail() {
     try {
         const rendered = buildRenderableHtml(currentPreviewPage);
         const captureFrame = document.createElement('iframe');
-        captureFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
         captureFrame.style.width = '400px';
         captureFrame.style.height = '300px';
         captureFrame.style.border = 'none';
@@ -1192,13 +1191,28 @@ async function captureThumbnail() {
         captureRoot.appendChild(captureFrame);
         document.body.appendChild(captureRoot);
 
+        const htmlBlobUrl = URL.createObjectURL(new Blob([rendered.htmlContent], { type: 'text/html' }));
+
         await new Promise((resolve) => {
-            captureFrame.onload = () => setTimeout(resolve, 250);
-            captureFrame.srcdoc = rendered.htmlContent;
+            captureFrame.onload = () => setTimeout(resolve, 400);
+            captureFrame.src = htmlBlobUrl;
         });
 
         const iframeDoc = captureFrame.contentDocument || captureFrame.contentWindow?.document;
         if (!iframeDoc?.documentElement) return null;
+
+        if (iframeDoc.fonts?.ready) {
+            await iframeDoc.fonts.ready.catch(() => {});
+        }
+
+        const assetLoads = Array.from(iframeDoc.images || []).map((img) => {
+            if (img.complete) return Promise.resolve();
+            return new Promise((resolve) => {
+                img.addEventListener('load', resolve, { once: true });
+                img.addEventListener('error', resolve, { once: true });
+            });
+        });
+        await Promise.all(assetLoads);
 
         const canvas = await html2canvas(iframeDoc.documentElement, {
             width: 400,
@@ -1209,6 +1223,7 @@ async function captureThumbnail() {
             logging: false
         });
 
+        URL.revokeObjectURL(htmlBlobUrl);
         Object.values(rendered.assetUrls).forEach(URL.revokeObjectURL);
         return canvas.toDataURL('image/jpeg', 0.4);
     } catch (e) {
