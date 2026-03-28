@@ -90,19 +90,19 @@
         <div class="dashboard-toolbar">
             <h2>Recent Projects <span>(Preparing for Community)</span></h2>
             <div class="toolbar-actions">
-                <select class="dashboard-select" disabled>
-                    <option>Sort by: Recent</option>
-                    <option>Sort by: Name</option>
+                <select class="dashboard-select" id="sort-projects">
+                    <option value="recent">Sort by: Recent</option>
+                    <option value="name">Sort by: Name</option>
                 </select>
-                <div class="view-toggles">
-                    <button class="icon-btn active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                <div class="view-toggles" id="view-toggles">
+                    <button class="icon-btn active" id="view-grid" title="Grid View"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="7" height="7"></rect>
                             <rect x="14" y="3" width="7" height="7"></rect>
                             <rect x="14" y="14" width="7" height="7"></rect>
                             <rect x="3" y="14" width="7" height="7"></rect>
                         </svg></button>
-                    <button class="icon-btn" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    <button class="icon-btn" id="view-list" title="List View"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2">
                             <line x1="8" y1="6" x2="21" y2="6"></line>
                             <line x1="8" y1="12" x2="21" y2="12"></line>
@@ -241,6 +241,10 @@
         const createEntryCard = document.getElementById('create-entry-card');
         const createEntryTitle = document.getElementById('create-entry-title');
         const createEntryCopy = document.getElementById('create-entry-copy');
+        const projectGrid = document.querySelector('.project-grid');
+        const sortProjects = document.getElementById('sort-projects');
+        const gridViewBtn = document.getElementById('view-grid');
+        const listViewBtn = document.getElementById('view-list');
         const accountTrigger = document.getElementById('account-trigger');
         const accountPanel = document.getElementById('account-panel');
         const avatar = document.getElementById('account-avatar');
@@ -255,6 +259,8 @@
         const photoUrlInput = document.getElementById('account-photo-url-input');
         const saveProfileBtn = document.getElementById('account-save-profile');
         const signOutBtn = document.getElementById('account-sign-out');
+        let allProjects = [];
+        let currentView = localStorage.getItem('blitz_dashboard_view') || 'grid';
 
         function normalizeUserProfile(data = {}) {
             const tier = typeof data.tier === 'string' ? data.tier.toLowerCase() : 'basic';
@@ -359,75 +365,25 @@
             createEntryCard.onclick = beginSignIn;
         }
 
-        function renderAccount(user) {
-            accountName.textContent = user?.displayName || 'Guest';
-            accountEmail.textContent = user?.email || 'Not signed in';
-            displayNameInput.value = user?.displayName || '';
-            photoUrlInput.value = user?.photoURL || '';
-            saveProfileBtn.classList.toggle('hidden', !user);
-            signOutBtn.classList.toggle('hidden', !user);
-            setAvatar(avatar, avatarFallback, user);
-            setAvatar(panelAvatar, panelFallback, user);
-            refreshHourlyPanel();
+        function applyDashboardView(view) {
+            currentView = view === 'list' ? 'list' : 'grid';
+            localStorage.setItem('blitz_dashboard_view', currentView);
+            projectGrid.classList.toggle('project-list-view', currentView === 'list');
+            gridViewBtn.classList.toggle('active', currentView === 'grid');
+            listViewBtn.classList.toggle('active', currentView === 'list');
         }
 
-        accountTrigger.addEventListener('click', (event) => {
-            event.stopPropagation();
-            accountPanel.classList.toggle('hidden');
-            refreshHourlyPanel();
-        });
+        function renderProjects() {
+            const createCard = document.getElementById('create-entry-card');
+            projectGrid.innerHTML = '';
+            if (createCard) projectGrid.appendChild(createCard);
 
-        document.addEventListener('click', (event) => {
-            if (!accountPanel.contains(event.target) && !accountTrigger.contains(event.target)) {
-                accountPanel.classList.add('hidden');
+            const projects = [...allProjects];
+            if (sortProjects.value === 'name') {
+                projects.sort((a, b) => (a.name || 'Untitled').localeCompare(b.name || 'Untitled'));
+            } else {
+                projects.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
             }
-        });
-
-        document.querySelectorAll('.theme-option').forEach(btn => {
-            btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
-        });
-
-        saveProfileBtn.addEventListener('click', async () => {
-            const user = auth.currentUser;
-            if (!user) return;
-            try {
-                await updateProfile(user, {
-                    displayName: displayNameInput.value.trim() || null,
-                    photoURL: photoUrlInput.value.trim() || null
-                });
-                await ensureUserDirectoryEntry(auth.currentUser);
-                renderAccount(auth.currentUser);
-            } catch (error) {
-                console.error("Profile update failed:", error);
-            }
-        });
-
-        signOutBtn.addEventListener('click', async () => {
-            await signOut(auth);
-            accountPanel.classList.add('hidden');
-        });
-
-        onAuthStateChanged(auth, async (user) => {
-            await ensureUserDirectoryEntry(user);
-            renderCreateEntry(user);
-            renderAccount(user);
-        });
-
-        applyTheme(localStorage.getItem('blitz_theme') || 'dark');
-
-        // Load community projects from RTDB in real-time
-        const projectsRef = ref(db, 'projects');
-        onValue(projectsRef, (snapshot) => {
-            const grid = document.querySelector('.project-grid');
-            const createCard = grid.querySelector('.create-new-card');
-            grid.innerHTML = '';
-            if (createCard) grid.appendChild(createCard);
-
-            const data = snapshot.val();
-            if (!data) return;
-
-            const projects = Object.entries(data).map(([id, p]) => ({ id, ...p }));
-            projects.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
 
             projects.forEach(project => {
                 const card = document.createElement('div');
@@ -464,8 +420,76 @@
 
                 card.appendChild(preview);
                 card.appendChild(info);
-                grid.appendChild(card);
+                projectGrid.appendChild(card);
             });
+        }
+
+        function renderAccount(user) {
+            accountName.textContent = user?.displayName || 'Guest';
+            accountEmail.textContent = user?.email || 'Not signed in';
+            displayNameInput.value = user?.displayName || '';
+            photoUrlInput.value = user?.photoURL || '';
+            saveProfileBtn.classList.toggle('hidden', !user);
+            signOutBtn.classList.toggle('hidden', !user);
+            setAvatar(avatar, avatarFallback, user);
+            setAvatar(panelAvatar, panelFallback, user);
+            refreshHourlyPanel();
+        }
+
+        accountTrigger.addEventListener('click', (event) => {
+            event.stopPropagation();
+            accountPanel.classList.toggle('hidden');
+            refreshHourlyPanel();
+        });
+
+        document.addEventListener('click', (event) => {
+            if (!accountPanel.contains(event.target) && !accountTrigger.contains(event.target)) {
+                accountPanel.classList.add('hidden');
+            }
+        });
+
+        document.querySelectorAll('.theme-option').forEach(btn => {
+            btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+        });
+        sortProjects.addEventListener('change', renderProjects);
+        gridViewBtn.addEventListener('click', () => applyDashboardView('grid'));
+        listViewBtn.addEventListener('click', () => applyDashboardView('list'));
+
+        saveProfileBtn.addEventListener('click', async () => {
+            const user = auth.currentUser;
+            if (!user) return;
+            try {
+                await updateProfile(user, {
+                    displayName: displayNameInput.value.trim() || null,
+                    photoURL: photoUrlInput.value.trim() || null
+                });
+                await ensureUserDirectoryEntry(auth.currentUser);
+                renderAccount(auth.currentUser);
+            } catch (error) {
+                console.error("Profile update failed:", error);
+            }
+        });
+
+        signOutBtn.addEventListener('click', async () => {
+            await signOut(auth);
+            accountPanel.classList.add('hidden');
+        });
+
+        onAuthStateChanged(auth, async (user) => {
+            await ensureUserDirectoryEntry(user);
+            renderCreateEntry(user);
+            renderAccount(user);
+        });
+
+        applyTheme(localStorage.getItem('blitz_theme') || 'dark');
+        applyDashboardView(currentView);
+
+        // Load community projects from RTDB in real-time
+        const projectsRef = ref(db, 'projects');
+        onValue(projectsRef, (snapshot) => {
+            const data = snapshot.val();
+            allProjects = data ? Object.entries(data).map(([id, p]) => ({ id, ...p })) : [];
+            renderProjects();
         });
 
         function getTimeAgo(ts) {
