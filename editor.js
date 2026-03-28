@@ -77,11 +77,26 @@ btn.addEventListener('click', () => {
     btn.style.background = "#00ff00";
 });`;
 
+// Intercept window.open explicitly for Monaco's link clicker
+const originalWindowOpen = window.open;
+window.open = function(url, ...args) {
+    if (typeof url === 'string') {
+        const cleanUrl = url.replace(/^[a-zA-Z]+:\/\//, '').replace(/^\.\//, '').replace(/^\//, '');
+        const possibleFileName = cleanUrl.split('/').pop();
+        if (files[possibleFileName]) {
+            console.log("VFS Navigate via Editor Link:", possibleFileName);
+            openFile(possibleFileName);
+            return { focus: () => {} }; // Mock window object to avoid errors
+        }
+    }
+    return originalWindowOpen.call(window, url, ...args);
+};
+
 // Setup Monaco Models (Virtual File System)
 let files = {
-    'index.html': { model: monaco.editor.createModel(initialHtml, "html"), lang: 'html' },
-    'styles.css': { model: monaco.editor.createModel(initialCss, "css"), lang: 'css' },
-    'script.js': { model: monaco.editor.createModel(initialJs, "javascript"), lang: 'javascript' }
+    'index.html': { model: monaco.editor.createModel(initialHtml, "html", monaco.Uri.file("index.html")), lang: 'html' },
+    'styles.css': { model: monaco.editor.createModel(initialCss, "css", monaco.Uri.file("styles.css")), lang: 'css' },
+    'script.js': { model: monaco.editor.createModel(initialJs, "javascript", monaco.Uri.file("script.js")), lang: 'javascript' }
 };
 
 let activeFile = 'index.html';
@@ -300,7 +315,7 @@ btnNewFile.addEventListener('click', () => {
     else if (ext === 'py') lang = 'python';
 
     files[filename] = {
-        model: monaco.editor.createModel("", lang),
+        model: monaco.editor.createModel("", lang, monaco.Uri.file(filename)),
         lang: lang
     };
 
@@ -350,7 +365,7 @@ function aiCreateFile(filename, content) {
         files[filename].model.setValue(content);
     } else {
         files[filename] = {
-            model: monaco.editor.createModel(content, lang),
+            model: monaco.editor.createModel(content, lang, monaco.Uri.file(filename)),
             lang: lang
         };
         bindContentChange(files[filename].model);
