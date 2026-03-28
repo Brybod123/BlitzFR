@@ -379,19 +379,13 @@ generateBtn.addEventListener('click', async () => {
     generateBtn.disabled = true;
     const bubble = aiMsg.querySelector('.chat-bubble');
 
-    // Tool container
-    const statusContainer = document.createElement('div');
-    statusContainer.className = 'tool-status-container';
-    aiMsg.appendChild(statusContainer);
-
-    await runChatLoop(bubble, statusContainer);
+    await runChatLoop(bubble);
     generateBtn.disabled = false;
 });
 
-async function runChatLoop(bubble, statusContainer, turn = 1) {
-    if (turn > 3) return; // Safeguard
+async function runChatLoop(bubble, turn = 1) {
+    if (turn > 3) return;
 
-    // Inject current file context into the request
     const fileContext = Object.keys(files).map(f => `- ${f}`).join('\n');
     const tempMessages = [
         ...chatMessages.slice(0, 1),
@@ -414,9 +408,6 @@ async function runChatLoop(bubble, statusContainer, turn = 1) {
         const decoder = new TextDecoder("utf-8");
         let aiContent = "";
         
-        // Only clear bubble on first turn of the user's turn
-        if (turn === 1) bubble.textContent = "";
-
         while (true) {
             const { value, done } = await reader.read();
             if (done) break;
@@ -432,9 +423,7 @@ async function runChatLoop(bubble, statusContainer, turn = 1) {
                         const json = JSON.parse(dataStr);
                         if (json.choices && json.choices[0].delta && json.choices[0].delta.content) {
                             aiContent += json.choices[0].delta.content;
-                            // FILTER OUT XML TAGS FOR DISPLAY
-                            const cleanText = aiContent.replace(/<[^>]+>/g, '');
-                            bubble.textContent = cleanText;
+                            updateAiMessageUI(bubble, aiContent);
                             chatHistory.scrollTop = chatHistory.scrollHeight;
                         }
                     } catch (e) { }
@@ -445,11 +434,17 @@ async function runChatLoop(bubble, statusContainer, turn = 1) {
         chatMessages.push({ role: 'assistant', content: aiContent });
 
         // Parse and Execute Tools
-        const result = executeAiTools(aiContent, statusContainer);
+        const needsReply = executeAiTools(aiContent);
         
-        if (result.contextAdded) {
+        if (needsReply) {
             await new Promise(r => setTimeout(r, 300));
-            await runChatLoop(bubble, statusContainer, turn + 1);
+            // Add a separator for the next turn
+            const sep = document.createElement('div');
+            sep.style.height = "1px";
+            sep.style.background = "#2d3748";
+            sep.style.margin = "10px 0";
+            bubble.appendChild(sep);
+            await runChatLoop(bubble, turn + 1);
         }
     } catch (err) {
         console.error(err);
@@ -457,59 +452,110 @@ async function runChatLoop(bubble, statusContainer, turn = 1) {
     }
 }
 
-function executeAiTools(content, statusContainer) {
+function updateAiMessageUI(bubble, content) {
+    bubble.innerHTML = '';
+    
+    // Regular expression to find all tool tags (complete or incomplete)
+    // Group 1: Completed Tags
+    // Group 2: Fragment tags (starts with < but hasn't reached > yet)
+    const regex = /(<[^>]*[\/>])|(<[^>]*>[\s\S]*?<\/[^>]+>)|(<[^>]*$)/g;
+    
+    let lastIndex = 0;
+    let match;
+    
+    while ((match = regex.exec(content)) !== null) {
+        // Append text before the tag
+        const textBefore = content.substring(lastIndex, match.index);
+        if (textBefore) {
+            const span = document.createElement('span');
+            span.textContent = textBefore;
+            bubble.appendChild(span);
+        }
+        
+        const fullTag = match[0];
+        
+        // Handle based on tag type
+        if (fullTag.startsWith('<') && !fullTag.includes('>') && !fullTag.includes(' ')) {
+             // Incomplete tag start, do nothing yet or show tiny indicator
+        } else if (fullTag.startsWith('<') && !fullTag.includes('>') && fullTag.length > 1) {
+             // We are middle of a tag like "<read_file pa"
+             bubble.appendChild(createToolCard("AI is thinking...", false));
+        } else if (fullTag.includes('>') || fullTag.endsWith('/>')) {
+             // Completed tag (could be a full tool call)
+             const pathMatch = fullTag.match(/path="([^"]+)"/);
+             const path = pathMatch ? pathMatch[1] : "file";
+             
+             if (fullTag.includes('read_file')) {
+                 bubble.appendChild(createToolCard(`Read ${path}`, true));
+             } else if (fullTag.includes('write_file')) {
+                 bubble.appendChild(createToolCard(`Updated ${path}`, true));
+             } else if (fullTag.includes('edit_file')) {
+                 bubble.appendChild(createToolCard(`Modified ${path}`, true));
+             } else if (fullTag.includes('delete_file')) {
+                 bubble.appendChild(createToolCard(`Deleted ${path}`, true));
+             } else {
+                 bubble.appendChild(createToolCard("Action performed", true));
+             }
+        }
+        
+        lastIndex = regex.lastIndex;
+    }
+    
+    // Append remaining text
+    const remainingText = content.substring(lastIndex);
+    if (remainingText) {
+        const span = document.createElement('span');
+        span.textContent = remainingText;
+        bubble.appendChild(span);
+    }
+}
+
+function createToolCard(text, isDone) {
+    const card = document.createElement('div');
+    card.className = `tool-status-card inline-card ${isDone ? 'done' : ''}`;
+    card.style.display = "inline-flex";
+    card.style.margin = "5px";
+    card.style.verticalAlign = "middle";
+    
+    if (isDone) {
+        card.innerHTML = `<span class="status-icon-done" style="font-size: 12px; margin-right: 8px;">✓</span><span style="font-size: 13px;">${text}</span>`;
+    } else {
+        card.innerHTML = `<div class="status-spinner" style="width:10px; height:10px; margin-right: 8px;"></div><span style="font-size: 13px;">${text}</span>`;
+    }
+    return card;
+}
+
+function executeAiTools(content) {
     let contextAdded = false;
-
-    function addStatus(text) {
-        const card = document.createElement('div');
-        card.className = 'tool-status-card';
-        card.innerHTML = `<div class="status-spinner"></div><span>${text}</span>`;
-        statusContainer.appendChild(card);
-        chatHistory.scrollTop = chatHistory.scrollHeight;
-        return card;
-    }
-
-    function markDone(card, text) {
-        card.className = 'tool-status-card done';
-        card.innerHTML = `<span class="status-icon-done">✓</span><span>${text}</span>`;
-    }
 
     // Read Files
     const readMatches = content.matchAll(/<read_file path="([^"]+)"\/>/g);
     for (const match of readMatches) {
         const path = match[1];
-        const status = addStatus(`Reading ${path}...`);
         if (files[path]) {
             const fileData = files[path].model.getValue();
             chatMessages.push({ role: 'system', content: `Content of ${path}:\n${fileData}` });
             contextAdded = true;
-            markDone(status, `Read ${path}`);
         }
     }
 
     // Write Files
     const writeMatches = content.matchAll(/<write_file path="([^"]+)">([\s\S]*?)<\/write_file>/g);
     for (const match of writeMatches) {
-        const status = addStatus(`Updating ${match[1]}...`);
         aiCreateFile(match[1], match[2]);
-        markDone(status, `Updated ${match[1]}`);
     }
 
     // Edit Files (Search/Replace)
     const editMatches = content.matchAll(/<edit_file path="([^"]+)">\s*<search>([\s\S]*?)<\/search>\s*<replace>([\s\S]*?)<\/replace>\s*<\/edit_file>/g);
     for (const match of editMatches) {
-        const status = addStatus(`Refactoring ${match[1]}...`);
         applyFileEdit(match[1], match[2], match[3]);
-        markDone(status, `Edited ${match[1]}`);
     }
 
     // Delete Files
     const deleteMatches = content.matchAll(/<delete_file path="([^"]+)"\/>/g);
     for (const match of deleteMatches) {
-        const status = addStatus(`Deleting ${match[1]}...`);
         if (files[match[1]]) deleteFile(match[1]);
-        markDone(status, `Deleted ${match[1]}`);
     }
 
-    return { contextAdded };
+    return contextAdded;
 }
