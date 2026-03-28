@@ -412,9 +412,11 @@
                 const preview = document.createElement('div');
                 preview.className = 'project-preview';
                 if (project.thumbnail) {
-                    preview.style.backgroundImage = 'url(' + project.thumbnail + ')';
-                    preview.style.backgroundSize = 'cover';
-                    preview.style.backgroundPosition = 'center top';
+                    const previewImage = document.createElement('img');
+                    previewImage.className = 'project-preview-image';
+                    previewImage.src = project.thumbnail;
+                    previewImage.alt = (project.name || 'Project') + ' thumbnail';
+                    preview.appendChild(previewImage);
                 } else {
                     preview.classList.add('skeleton');
                 }
