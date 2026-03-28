@@ -1105,6 +1105,9 @@ body.editor-page {
     justify-content: center;
     cursor: pointer;
     padding: 0;
+    overflow: hidden;
+    transform: translateY(0) scale(1);
+    transition: transform 180ms ease, border-color 180ms ease, box-shadow 220ms ease, background 180ms ease;
     clip-path: polygon(
         0 4px, 4px 4px, 4px 0,
         calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px,
@@ -1116,6 +1119,11 @@ body.editor-page {
 .account-trigger:hover {
     border-color: #0088ff;
     box-shadow: 0 0 16px rgba(0, 136, 255, 0.25);
+    transform: translateY(-1px) scale(1.04);
+}
+
+.account-trigger:active {
+    transform: translateY(0) scale(0.98);
 }
 
 .account-avatar,
@@ -1123,6 +1131,7 @@ body.editor-page {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    object-position: center;
 }
 
 .account-avatar-fallback {
@@ -1151,12 +1160,25 @@ body.editor-page {
     border: 2px solid #0088ff;
     box-shadow: 0 16px 34px rgba(0, 0, 0, 0.35);
     z-index: 40;
+    transform-origin: top right;
+    animation: accountPanelIn 180ms ease;
     clip-path: polygon(
         0 8px, 8px 8px, 8px 0,
         calc(100% - 8px) 0, calc(100% - 8px) 8px, 100% 8px,
         100% calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) 100%,
         8px 100%, 8px calc(100% - 8px), 0 calc(100% - 8px)
     );
+}
+
+@keyframes accountPanelIn {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
 }
 
 .account-panel-head {
@@ -1215,6 +1237,27 @@ body.editor-page {
     margin-bottom: 14px;
 }
 
+.account-edit-section {
+    margin-bottom: 14px;
+}
+
+.account-input {
+    width: 100%;
+    border: 1px solid #30363d;
+    background: #12161c;
+    color: #e2e8f0;
+    padding: 10px 12px;
+    font-family: 'VT323', monospace;
+    font-size: 1rem;
+    margin-bottom: 8px;
+    outline: none;
+}
+
+.account-input:focus {
+    border-color: #0088ff;
+    box-shadow: 0 0 0 1px rgba(0, 136, 255, 0.2);
+}
+
 .theme-switcher {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -1259,6 +1302,7 @@ body[data-theme="light"] .view-toggles,
 body[data-theme="light"] .account-trigger,
 body[data-theme="light"] .account-panel,
 body[data-theme="light"] .account-stat-card,
+body[data-theme="light"] .account-input,
 body[data-theme="light"] .theme-option,
 body[data-theme="light"] .account-action-btn {
     background: #f8fbff;

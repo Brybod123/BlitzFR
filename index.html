@@ -74,6 +74,12 @@
                             <button class="theme-option" data-theme="light">Light</button>
                         </div>
                     </div>
+                    <div class="account-edit-section">
+                        <span class="account-section-label">Profile</span>
+                        <input class="account-input" id="account-display-name-input" type="text" placeholder="Display name">
+                        <input class="account-input" id="account-photo-url-input" type="url" placeholder="Profile photo URL">
+                        <button class="account-action-btn hidden" id="account-save-profile">Save Profile</button>
+                    </div>
                     <button class="account-action-btn hidden" id="account-sign-out">Sign Out</button>
                 </div>
             </div>
@@ -208,7 +214,7 @@
     </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
         import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
@@ -243,6 +249,9 @@
         const accountEmail = document.getElementById('account-email');
         const accountBudget = document.getElementById('account-hourly-budget');
         const accountUsed = document.getElementById('account-hourly-used');
+        const displayNameInput = document.getElementById('account-display-name-input');
+        const photoUrlInput = document.getElementById('account-photo-url-input');
+        const saveProfileBtn = document.getElementById('account-save-profile');
         const signOutBtn = document.getElementById('account-sign-out');
 
         function getHourlyUsage() {
@@ -319,6 +328,9 @@
         function renderAccount(user) {
             accountName.textContent = user?.displayName || 'Guest';
             accountEmail.textContent = user?.email || 'Not signed in';
+            displayNameInput.value = user?.displayName || '';
+            photoUrlInput.value = user?.photoURL || '';
+            saveProfileBtn.classList.toggle('hidden', !user);
             signOutBtn.classList.toggle('hidden', !user);
             setAvatar(avatar, avatarFallback, user);
             setAvatar(panelAvatar, panelFallback, user);
@@ -339,6 +351,20 @@
 
         document.querySelectorAll('.theme-option').forEach(btn => {
             btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
+        });
+
+        saveProfileBtn.addEventListener('click', async () => {
+            const user = auth.currentUser;
+            if (!user) return;
+            try {
+                await updateProfile(user, {
+                    displayName: displayNameInput.value.trim() || null,
+                    photoURL: photoUrlInput.value.trim() || null
+                });
+                renderAccount(auth.currentUser);
+            } catch (error) {
+                console.error("Profile update failed:", error);
+            }
         });
 
         signOutBtn.addEventListener('click', async () => {
