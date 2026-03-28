@@ -455,14 +455,13 @@ async function runChatLoop(bubble, turn = 1) {
 function updateAiMessageUI(bubble, content) {
     bubble.innerHTML = '';
     
-    // Better regex: match completed tags OR a tag that has started but not finished
-    const regex = /(<read_file[^>]*\/>|<write_file[^>]*>[\s\S]*?<\/write_file>|<edit_file[^>]*>[\s\S]*?<\/edit_file>|<delete_file[^>]*\/>)|(<(read_file|write_file|edit_file|delete_file)[^>]*$|<(write_file|edit_file)[^>]*>[\s\S]*?$)/g;
+    // Updated regex including codebase tools
+    const regex = /(<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase)[^>]*\/>|<(write_file|edit_file|create_file|search_codebase)[^>]*>[\s\S]*?<\/(write_file|edit_file|create_file|search_codebase)>)|(<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase)[^>]*$|<(write_file|edit_file|create_file|search_codebase)[^>]*>[\s\S]*?$)/g;
     
     let lastIndex = 0;
     let match;
     
     while ((match = regex.exec(content)) !== null) {
-        // Append text before the tag
         const textBefore = content.substring(lastIndex, match.index);
         if (textBefore) {
             const span = document.createElement('span');
@@ -471,34 +470,46 @@ function updateAiMessageUI(bubble, content) {
         }
         
         const fullMatch = match[0];
-        const isComplete = !!match[1]; // match[1] is the group for complete tags
+        const isComplete = !!match[1];
         
-        // Extract type and path for better labeling
-        const typeMatch = fullMatch.match(/<(read_file|write_file|edit_file|delete_file)/);
+        const typeMatch = fullMatch.match(/<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase)/);
         const type = typeMatch ? typeMatch[1] : "tool";
         const pathMatch = fullMatch.match(/path="([^"]+)"/);
-        const path = pathMatch ? pathMatch[1] : "file";
+        const path = pathMatch ? pathMatch[1] : "";
         
         const labelMap = {
             'read_file': 'Reading ',
             'write_file': 'Writing ',
+            'create_file': 'Creating ',
             'edit_file': 'Modifying ',
-            'delete_file': 'Deleting '
+            'delete_file': 'Deleting ',
+            'read_codebase': 'Scanning Codebase...',
+            'search_codebase': 'Searching Codebase...'
         };
         const doneMap = {
             'read_file': 'Read ',
             'write_file': 'Updated ',
+            'create_file': 'Created ',
             'edit_file': 'Modified ',
-            'delete_file': 'Deleted '
+            'delete_file': 'Deleted ',
+            'read_codebase': 'Scan Complete',
+            'search_codebase': 'Search Complete'
         };
 
-        const label = isComplete ? (doneMap[type] + path) : (labelMap[type] + path + "...");
-        bubble.appendChild(createToolCard(label, isComplete));
+        const label = isComplete ? (doneMap[type] + (path || "")) : (labelMap[type] + (path || ""));
         
+        // Capture diff data for edit_file if complete
+        let diffData = null;
+        if (type === 'edit_file' && isComplete) {
+            const sm = fullMatch.match(/<search>([\s\S]*?)<\/search>/);
+            const rm = fullMatch.match(/<replace>([\s\S]*?)<\/replace>/);
+            if (sm && rm) diffData = { path, search: sm[1], replace: rm[1] };
+        }
+
+        bubble.appendChild(createToolCard(label, isComplete, type, path, diffData));
         lastIndex = regex.lastIndex;
     }
     
-    // Append remaining text
     const remainingText = content.substring(lastIndex);
     if (remainingText) {
         const span = document.createElement('span');
@@ -558,7 +569,20 @@ function createToolCard(text, isDone) {
     
     if (isDone) {
         card.style.borderColor = "#2f855a";
-        card.innerHTML = `<span style="color: #48bb78; font-weight: bold;">✓</span> <span style="font-size: 13px; color: #e2e8f0;">${text}</span>`;
+        card.innerHTML = `<span style="color: #48bb78; font-weight: bold;">✓</span> <span style="font-size: 13px; color: #e2e8f0;">${text} <span style="font-size: 10px; opacity: 0.6; margin-left: 8px;">(View)</span></span>`;
+        
+        card.addEventListener('mouseenter', () => { card.style.background = "#2d3748"; card.style.transform = "translateY(-1px)"; });
+        card.addEventListener('mouseleave', () => { card.style.background = "#1a202c"; card.style.transform = "none"; });
+        
+        card.addEventListener('click', () => {
+            if (type === 'edit_file' && diffData) {
+                const oldContent = files[diffData.path].model.getValue();
+                const newContent = oldContent.replace(diffData.search, diffData.replace);
+                showDiff(diffData.path, oldContent, newContent);
+            } else if (path && files[path]) {
+                switchToFile(path);
+            }
+        });
     } else {
         card.innerHTML = `<div class="status-spinner" style="width: 14px; height: 14px; border: 2px solid rgba(74, 144, 226, 0.2); border-top-color: #4a90e2; border-radius: 50%; animation: spin 0.8s linear infinite;"></div> <span style="font-size: 13px; color: #e2e8f0;">${text}</span>`;
     }
@@ -567,6 +591,31 @@ function createToolCard(text, isDone) {
 
 function executeAiTools(content) {
     let contextAdded = false;
+
+    // Read Codebase
+    if (content.includes('<read_codebase/>')) {
+        let codebaseData = "Current Codebase:\n";
+        for (const path in files) {
+            codebaseData += `\n--- FILE: ${path} ---\n${files[path].model.getValue()}\n`;
+        }
+        chatMessages.push({ role: 'system', content: codebaseData });
+        contextAdded = true;
+    }
+
+    // Search Codebase
+    const searchMatches = content.matchAll(/<search_codebase>([\s\S]*?)<\/search_codebase>/g);
+    for (const match of searchMatches) {
+        const query = match[1].trim();
+        let results = `Search results for "${query}":\n`;
+        for (const path in files) {
+            const content = files[path].model.getValue();
+            if (content.includes(query)) {
+                results += `- Found in: ${path}\n`;
+            }
+        }
+        chatMessages.push({ role: 'system', content: results });
+        contextAdded = true;
+    }
 
     // Read Files
     const readMatches = content.matchAll(/<read_file path="([^"]+)"\/>/g);
@@ -579,10 +628,10 @@ function executeAiTools(content) {
         }
     }
 
-    // Write Files
-    const writeMatches = content.matchAll(/<write_file path="([^"]+)">([\s\S]*?)<\/write_file>/g);
+    // Create/Write Files
+    const writeMatches = content.matchAll(/<(write_file|create_file) path="([^"]+)">([\s\S]*?)<\/(write_file|create_file)>/g);
     for (const match of writeMatches) {
-        aiCreateFile(match[1], match[2]);
+        aiCreateFile(match[2], match[3]);
     }
 
     // Edit Files (Search/Replace)
