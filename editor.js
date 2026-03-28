@@ -846,8 +846,9 @@ function getRemainingHourlyRequests(modelId) {
 
     if (balance < 50) return 0;
 
-    // Theoretical hourly budget of $0.03
-    const hourlyBudget = 0.03;
+    const tier = window.firebaseUserProfile?.tier || 'basic';
+    const hourlyBudgetByTier = { basic: 0.03, gold: 0.04, diamond: 0.05 };
+    const hourlyBudget = hourlyBudgetByTier[tier] || hourlyBudgetByTier.basic;
     const limit = Math.max(1, Math.floor(hourlyBudget / estCost));
     return Math.max(0, limit - state.count);
 }

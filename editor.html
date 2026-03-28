@@ -227,6 +227,8 @@
         const auth = getAuth(app);
         const googleProvider = new GoogleAuthProvider();
         const db = getDatabase(app);
+        const tierBudgets = { basic: 0.03, gold: 0.04, diamond: 0.05 };
+        let currentUserProfile = { gifted_budget: 0, tier: 'basic' };
         const accountTrigger = document.getElementById('account-trigger');
         const accountPanel = document.getElementById('account-panel');
         const avatar = document.getElementById('account-avatar');
@@ -242,6 +244,40 @@
         const saveProfileBtn = document.getElementById('account-save-profile');
         const signOutBtn = document.getElementById('account-sign-out');
 
+        function normalizeUserProfile(data = {}) {
+            const tier = typeof data.tier === 'string' ? data.tier.toLowerCase() : 'basic';
+            return {
+                gifted_budget: Number(data.gifted_budget) || 0,
+                tier: tierBudgets[tier] ? tier : 'basic'
+            };
+        }
+
+        async function ensureUserDirectoryEntry(user) {
+            if (!user) {
+                currentUserProfile = { gifted_budget: 0, tier: 'basic' };
+                window.firebaseUserProfile = currentUserProfile;
+                return currentUserProfile;
+            }
+
+            const userRef = ref(db, 'users/' + user.uid);
+            const snapshot = await get(userRef);
+            const existing = snapshot.exists() ? normalizeUserProfile(snapshot.val()) : { gifted_budget: 0, tier: 'basic' };
+            const payload = {
+                uid: user.uid,
+                email: user.email || '',
+                displayName: user.displayName || '',
+                photoURL: user.photoURL || '',
+                gifted_budget: existing.gifted_budget,
+                tier: existing.tier,
+                createdAt: snapshot.exists() ? (snapshot.val().createdAt || Date.now()) : Date.now(),
+                updatedAt: Date.now()
+            };
+            await set(userRef, payload);
+            currentUserProfile = { gifted_budget: payload.gifted_budget, tier: payload.tier };
+            window.firebaseUserProfile = currentUserProfile;
+            return currentUserProfile;
+        }
+
         // Expose Firebase RTDB tools globally so editor.js (non-module) can use them
         window.firebaseAuth = auth;
         window.firebaseSignIn = async () => signInWithPopup(auth, googleProvider);
@@ -254,7 +290,7 @@
         window.firebaseReady = true;
         window.dispatchEvent(new Event('firebase-ready'));
 
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
             if (user) {
                 window.firebaseUser = user;
                 window.firebaseAuthReady = true;
@@ -263,11 +299,12 @@
                 window.firebaseUser = null;
                 window.firebaseAuthReady = false;
             }
+            await ensureUserDirectoryEntry(user);
             renderAccount(user);
         });
 
         function getHourlyUsage() {
-            const hourlyBudget = 0.03;
+            const hourlyBudget = tierBudgets[currentUserProfile.tier] || tierBudgets.basic;
             const state = JSON.parse(localStorage.getItem('blitz_hourly_limit') || '{}');
             const estCost = parseFloat(localStorage.getItem('blitz_estimated_request_cost') || '0');
             const isFresh = state.ts && (Date.now() - state.ts) <= 3600000;
@@ -343,6 +380,7 @@
                     displayName: displayNameInput.value.trim() || null,
                     photoURL: photoUrlInput.value.trim() || null
                 });
+                await ensureUserDirectoryEntry(auth.currentUser);
                 renderAccount(auth.currentUser);
             } catch (error) {
                 console.error("Profile update failed:", error);

@@ -216,7 +216,7 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
         import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
-        import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+        import { getDatabase, get, onValue, ref, set } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDz4P07G-B05SqCMyDdCnIyRAJNy19_1oQ",
@@ -234,6 +234,8 @@
         const auth = getAuth(app);
         const googleProvider = new GoogleAuthProvider();
         const db = getDatabase(app);
+        const tierBudgets = { basic: 0.03, gold: 0.04, diamond: 0.05 };
+        let currentUserProfile = { gifted_budget: 0, tier: 'basic' };
         const headerAction = document.getElementById('header-auth-action');
         const headerActionLabel = document.getElementById('header-auth-action-label');
         const createEntryCard = document.getElementById('create-entry-card');
@@ -254,8 +256,40 @@
         const saveProfileBtn = document.getElementById('account-save-profile');
         const signOutBtn = document.getElementById('account-sign-out');
 
+        function normalizeUserProfile(data = {}) {
+            const tier = typeof data.tier === 'string' ? data.tier.toLowerCase() : 'basic';
+            return {
+                gifted_budget: Number(data.gifted_budget) || 0,
+                tier: tierBudgets[tier] ? tier : 'basic'
+            };
+        }
+
+        async function ensureUserDirectoryEntry(user) {
+            if (!user) {
+                currentUserProfile = { gifted_budget: 0, tier: 'basic' };
+                return currentUserProfile;
+            }
+
+            const userRef = ref(db, 'users/' + user.uid);
+            const snapshot = await get(userRef);
+            const existing = snapshot.exists() ? normalizeUserProfile(snapshot.val()) : { gifted_budget: 0, tier: 'basic' };
+            const payload = {
+                uid: user.uid,
+                email: user.email || '',
+                displayName: user.displayName || '',
+                photoURL: user.photoURL || '',
+                gifted_budget: existing.gifted_budget,
+                tier: existing.tier,
+                createdAt: snapshot.exists() ? (snapshot.val().createdAt || Date.now()) : Date.now(),
+                updatedAt: Date.now()
+            };
+            await set(userRef, payload);
+            currentUserProfile = { gifted_budget: payload.gifted_budget, tier: payload.tier };
+            return currentUserProfile;
+        }
+
         function getHourlyUsage() {
-            const hourlyBudget = 0.03;
+            const hourlyBudget = tierBudgets[currentUserProfile.tier] || tierBudgets.basic;
             const state = JSON.parse(localStorage.getItem('blitz_hourly_limit') || '{}');
             const estCost = parseFloat(localStorage.getItem('blitz_estimated_request_cost') || '0');
             const isFresh = state.ts && (Date.now() - state.ts) <= 3600000;
@@ -361,6 +395,7 @@
                     displayName: displayNameInput.value.trim() || null,
                     photoURL: photoUrlInput.value.trim() || null
                 });
+                await ensureUserDirectoryEntry(auth.currentUser);
                 renderAccount(auth.currentUser);
             } catch (error) {
                 console.error("Profile update failed:", error);
@@ -372,7 +407,8 @@
             accountPanel.classList.add('hidden');
         });
 
-        onAuthStateChanged(auth, (user) => {
+        onAuthStateChanged(auth, async (user) => {
+            await ensureUserDirectoryEntry(user);
             renderCreateEntry(user);
             renderAccount(user);
         });
