@@ -455,10 +455,8 @@ async function runChatLoop(bubble, turn = 1) {
 function updateAiMessageUI(bubble, content) {
     bubble.innerHTML = '';
     
-    // Regular expression to find all tool tags (complete or incomplete)
-    // Group 1: Completed Tags
-    // Group 2: Fragment tags (starts with < but hasn't reached > yet)
-    const regex = /(<[^>]*[\/>])|(<[^>]*>[\s\S]*?<\/[^>]+>)|(<[^>]*$)/g;
+    // Better regex: match completed tags OR a tag that has started but not finished
+    const regex = /(<read_file[^>]*\/>|<write_file[^>]*>[\s\S]*?<\/write_file>|<edit_file[^>]*>[\s\S]*?<\/edit_file>|<delete_file[^>]*\/>)|(<(read_file|write_file|edit_file|delete_file)[^>]*$|<(write_file|edit_file)[^>]*>[\s\S]*?$)/g;
     
     let lastIndex = 0;
     let match;
@@ -472,31 +470,30 @@ function updateAiMessageUI(bubble, content) {
             bubble.appendChild(span);
         }
         
-        const fullTag = match[0];
+        const fullMatch = match[0];
+        const isComplete = !!match[1]; // match[1] is the group for complete tags
         
-        // Handle based on tag type
-        if (fullTag.startsWith('<') && !fullTag.includes('>') && !fullTag.includes(' ')) {
-             // Incomplete tag start, do nothing yet or show tiny indicator
-        } else if (fullTag.startsWith('<') && !fullTag.includes('>') && fullTag.length > 1) {
-             // We are middle of a tag like "<read_file pa"
-             bubble.appendChild(createToolCard("AI is thinking...", false));
-        } else if (fullTag.includes('>') || fullTag.endsWith('/>')) {
-             // Completed tag (could be a full tool call)
-             const pathMatch = fullTag.match(/path="([^"]+)"/);
-             const path = pathMatch ? pathMatch[1] : "file";
-             
-             if (fullTag.includes('read_file')) {
-                 bubble.appendChild(createToolCard(`Read ${path}`, true));
-             } else if (fullTag.includes('write_file')) {
-                 bubble.appendChild(createToolCard(`Updated ${path}`, true));
-             } else if (fullTag.includes('edit_file')) {
-                 bubble.appendChild(createToolCard(`Modified ${path}`, true));
-             } else if (fullTag.includes('delete_file')) {
-                 bubble.appendChild(createToolCard(`Deleted ${path}`, true));
-             } else {
-                 bubble.appendChild(createToolCard("Action performed", true));
-             }
-        }
+        // Extract type and path for better labeling
+        const typeMatch = fullMatch.match(/<(read_file|write_file|edit_file|delete_file)/);
+        const type = typeMatch ? typeMatch[1] : "tool";
+        const pathMatch = fullMatch.match(/path="([^"]+)"/);
+        const path = pathMatch ? pathMatch[1] : "file";
+        
+        const labelMap = {
+            'read_file': 'Reading ',
+            'write_file': 'Writing ',
+            'edit_file': 'Modifying ',
+            'delete_file': 'Deleting '
+        };
+        const doneMap = {
+            'read_file': 'Read ',
+            'write_file': 'Updated ',
+            'edit_file': 'Modified ',
+            'delete_file': 'Deleted '
+        };
+
+        const label = isComplete ? (doneMap[type] + path) : (labelMap[type] + path + "...");
+        bubble.appendChild(createToolCard(label, isComplete));
         
         lastIndex = regex.lastIndex;
     }
@@ -512,15 +509,24 @@ function updateAiMessageUI(bubble, content) {
 
 function createToolCard(text, isDone) {
     const card = document.createElement('div');
-    card.className = `tool-status-card inline-card ${isDone ? 'done' : ''}`;
-    card.style.display = "inline-flex";
-    card.style.margin = "5px";
-    card.style.verticalAlign = "middle";
+    card.className = `tool-status-card ${isDone ? 'done' : ''}`;
+    // Force rectangle look
+    card.style.display = "flex";
+    card.style.margin = "12px 0";
+    card.style.width = "100%";
+    card.style.maxWidth = "400px";
+    card.style.padding = "10px 16px";
+    card.style.background = "#1a202c";
+    card.style.border = "1px solid #2d3748";
+    card.style.borderRadius = "8px";
+    card.style.alignItems = "center";
+    card.style.gap = "12px";
     
     if (isDone) {
-        card.innerHTML = `<span class="status-icon-done" style="font-size: 12px; margin-right: 8px;">✓</span><span style="font-size: 13px;">${text}</span>`;
+        card.style.borderColor = "#2f855a";
+        card.innerHTML = `<span style="color: #48bb78; font-weight: bold;">✓</span> <span style="font-size: 13px; color: #e2e8f0;">${text}</span>`;
     } else {
-        card.innerHTML = `<div class="status-spinner" style="width:10px; height:10px; margin-right: 8px;"></div><span style="font-size: 13px;">${text}</span>`;
+        card.innerHTML = `<div class="status-spinner" style="width: 14px; height: 14px; border: 2px solid rgba(74, 144, 226, 0.2); border-top-color: #4a90e2; border-radius: 50%; animation: spin 0.8s linear infinite;"></div> <span style="font-size: 13px; color: #e2e8f0;">${text}</span>`;
     }
     return card;
 }
