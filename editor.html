@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Bytesized&family=Jersey+10&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.6/dist/purify.min.js"></script>
 </head>
 <body class="editor-page">
     <div class="editor-container">
@@ -162,6 +163,7 @@
     </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
         import { getDatabase, ref, set, get, push } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
@@ -178,9 +180,11 @@
 
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
+        const auth = getAuth(app);
         const db = getDatabase(app);
 
         // Expose Firebase RTDB tools globally so editor.js (non-module) can use them
+        window.firebaseAuth = auth;
         window.firebaseDB = db;
         window.firebaseRef = ref;
         window.firebaseSet = set;
@@ -188,6 +192,22 @@
         window.firebasePush = push;
         window.firebaseReady = true;
         window.dispatchEvent(new Event('firebase-ready'));
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                window.firebaseUser = user;
+                window.firebaseAuthReady = true;
+                window.dispatchEvent(new Event('firebase-auth-ready'));
+                return;
+            }
+
+            window.firebaseAuthReady = false;
+            try {
+                await signInAnonymously(auth);
+            } catch (error) {
+                console.error("Anonymous auth failed:", error);
+            }
+        });
     </script>
 </body>
 </html>

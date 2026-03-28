@@ -9,6 +9,7 @@ const btnFileExplorer = document.getElementById('btn-file-explorer');
 const fileExplorer = document.getElementById('file-explorer');
 const fileList = document.getElementById('file-list');
 const btnNewFile = document.getElementById('btn-new-file');
+const saveBtn = document.querySelector('.save-btn');
 
 let chatMessages = [
     {
@@ -100,6 +101,8 @@ let files = {
 };
 
 let activeFile = 'index.html';
+let currentUser = window.firebaseUser || null;
+let currentProjectOwnerUid = null;
 
 // Create editor
 const editor = monaco.editor.create(document.getElementById('monaco-container'), {
@@ -124,6 +127,76 @@ const diffContainer = document.getElementById('monaco-diff-container');
 document.getElementById('btn-close-diff').addEventListener('click', () => {
     diffContainer.classList.add('hidden');
 });
+
+function renderMarkdownSafe(text) {
+    const rawHtml = marked.parse(text || "");
+    if (window.DOMPurify) {
+        return window.DOMPurify.sanitize(rawHtml);
+    }
+    const fallback = document.createElement('div');
+    fallback.textContent = text || "";
+    return fallback.innerHTML;
+}
+
+function waitForAuth() {
+    if (window.firebaseAuthReady && window.firebaseUser) {
+        currentUser = window.firebaseUser;
+        return Promise.resolve(currentUser);
+    }
+
+    return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => {
+            cleanup();
+            reject(new Error("Authentication timed out."));
+        }, 8000);
+
+        function handleReady() {
+            currentUser = window.firebaseUser || null;
+            if (!currentUser) return;
+            cleanup();
+            resolve(currentUser);
+        }
+
+        function cleanup() {
+            clearTimeout(timer);
+            window.removeEventListener('firebase-auth-ready', handleReady);
+        }
+
+        window.addEventListener('firebase-auth-ready', handleReady);
+    });
+}
+
+function updateSaveButtonState() {
+    if (!saveBtn) return;
+
+    if (!currentUser) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'AUTH...';
+        saveBtn.style.opacity = '0.5';
+        saveBtn.style.cursor = 'wait';
+        return;
+    }
+
+    if (currentProjectId && currentProjectOwnerUid && currentProjectOwnerUid !== currentUser.uid) {
+        saveBtn.disabled = true;
+        saveBtn.textContent = 'READ ONLY';
+        saveBtn.style.opacity = '0.45';
+        saveBtn.style.cursor = 'not-allowed';
+        return;
+    }
+
+    saveBtn.disabled = false;
+    saveBtn.textContent = 'SAVE';
+    saveBtn.style.opacity = '1';
+    saveBtn.style.cursor = 'pointer';
+}
+
+window.addEventListener('firebase-auth-ready', () => {
+    currentUser = window.firebaseUser || null;
+    updateSaveButtonState();
+});
+
+updateSaveButtonState();
 
 function showDiff(filename, oldContent, newContent) {
     const originalModel = monaco.editor.createModel(oldContent, files[filename].lang);
@@ -256,15 +329,22 @@ function renderFiles() {
             icon = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#357abd" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>`;
         }
 
-        li.innerHTML = `<span>${icon}</span> <span>${filename}</span>
-            <button class="file-item-delete" title="Delete">✕</button>`;
+        const iconWrap = document.createElement('span');
+        iconWrap.innerHTML = icon;
+        const nameWrap = document.createElement('span');
+        nameWrap.textContent = filename;
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'file-item-delete';
+        deleteBtn.title = 'Delete';
+        deleteBtn.textContent = '✕';
+        li.append(iconWrap, nameWrap, deleteBtn);
 
         li.addEventListener('click', (e) => {
             if (e.target.classList.contains('file-item-delete')) return;
             openFile(filename);
         });
 
-        li.querySelector('.file-item-delete').addEventListener('click', (e) => {
+        deleteBtn.addEventListener('click', (e) => {
             e.stopPropagation();
             deleteFile(filename);
         });
@@ -437,25 +517,31 @@ generateBtn.addEventListener('click', async () => {
     // Append user message
     const userMsg = document.createElement('div');
     userMsg.className = 'chat-message user-message';
-    userMsg.innerHTML = `
-        <span class="chat-avatar">U</span>
-        <div class="chat-bubble">${marked.parse(promptText)}</div>
-    `;
+    const userAvatar = document.createElement('span');
+    userAvatar.className = 'chat-avatar';
+    userAvatar.textContent = 'U';
+    const userBubble = document.createElement('div');
+    userBubble.className = 'chat-bubble';
+    userBubble.innerHTML = renderMarkdownSafe(promptText);
+    userMsg.append(userAvatar, userBubble);
     chatHistory.appendChild(userMsg);
     promptArea.value = '';
 
     // Add AI loading message
     const aiMsg = document.createElement('div');
     aiMsg.className = 'chat-message ai-message';
-    aiMsg.innerHTML = `
-        <span class="chat-avatar">AI</span>
-        <div class="chat-bubble">Generating your request...</div>
-    `;
+    const aiAvatar = document.createElement('span');
+    aiAvatar.className = 'chat-avatar';
+    aiAvatar.textContent = 'AI';
+    const aiBubble = document.createElement('div');
+    aiBubble.className = 'chat-bubble';
+    aiBubble.textContent = 'Generating your request...';
+    aiMsg.append(aiAvatar, aiBubble);
     chatHistory.appendChild(aiMsg);
     chatHistory.scrollTop = chatHistory.scrollHeight;
 
     generateBtn.disabled = true;
-    const bubble = aiMsg.querySelector('.chat-bubble');
+    const bubble = aiBubble;
 
     await runChatLoop(bubble);
     generateBtn.disabled = false;
@@ -550,7 +636,7 @@ function updateAiMessageUI(bubble, content) {
         const textBefore = content.substring(lastIndex, match.index);
         if (textBefore) {
             const span = document.createElement('span');
-            span.innerHTML = marked.parse(textBefore);
+            span.innerHTML = renderMarkdownSafe(textBefore);
             bubble.appendChild(span);
         }
 
@@ -621,7 +707,7 @@ function updateAiMessageUI(bubble, content) {
     const remainingText = content.substring(lastIndex);
     if (remainingText) {
         const span = document.createElement('span');
-        span.innerHTML = marked.parse(remainingText);
+        span.innerHTML = renderMarkdownSafe(remainingText);
         bubble.appendChild(span);
     }
 }
@@ -803,7 +889,12 @@ async function updateModelStats() {
                 opt.className = 'model-option';
                 opt.dataset.value = m.id;
                 opt.dataset.name = m.name;
-                opt.innerHTML = `${m.name} <span style="opacity: 0.5; margin-left: auto;">~$${cost}/req</span>`;
+                opt.textContent = m.name;
+                const costSpan = document.createElement('span');
+                costSpan.style.opacity = '0.5';
+                costSpan.style.marginLeft = 'auto';
+                costSpan.textContent = `~$${cost}/req`;
+                opt.appendChild(costSpan);
 
                 opt.addEventListener('click', () => {
                     dropdownTrigger.dataset.value = m.id;
@@ -886,7 +977,21 @@ function createToolCard(text, isDone, type, path, diffData) {
 
     if (isDone) {
         card.style.borderColor = "#2f855a";
-        card.innerHTML = `<span style="color: #48bb78; font-weight: bold;">✓</span> <span style="font-size: 13px; color: #e2e8f0;">${text} <span style="font-size: 10px; opacity: 0.6; margin-left: 8px;">(View)</span></span>`;
+        const check = document.createElement('span');
+        check.style.color = '#48bb78';
+        check.style.fontWeight = 'bold';
+        check.textContent = '✓';
+        const label = document.createElement('span');
+        label.style.fontSize = '13px';
+        label.style.color = '#e2e8f0';
+        label.textContent = text;
+        const viewLabel = document.createElement('span');
+        viewLabel.style.fontSize = '10px';
+        viewLabel.style.opacity = '0.6';
+        viewLabel.style.marginLeft = '8px';
+        viewLabel.textContent = '(View)';
+        label.appendChild(viewLabel);
+        card.append(check, label);
 
         card.addEventListener('mouseenter', () => { card.style.background = "#2d3748"; card.style.transform = "translateY(-1px)"; });
         card.addEventListener('mouseleave', () => { card.style.background = "#1a202c"; card.style.transform = "none"; });
@@ -901,7 +1006,19 @@ function createToolCard(text, isDone, type, path, diffData) {
             }
         });
     } else {
-        card.innerHTML = `<div class="status-spinner" style="width: 14px; height: 14px; border: 2px solid rgba(74, 144, 226, 0.2); border-top-color: #4a90e2; border-radius: 50%; animation: spin 0.8s linear infinite;"></div> <span style="font-size: 13px; color: #e2e8f0;">${text}</span>`;
+        const spinner = document.createElement('div');
+        spinner.className = 'status-spinner';
+        spinner.style.width = '14px';
+        spinner.style.height = '14px';
+        spinner.style.border = '2px solid rgba(74, 144, 226, 0.2)';
+        spinner.style.borderTopColor = '#4a90e2';
+        spinner.style.borderRadius = '50%';
+        spinner.style.animation = 'spin 0.8s linear infinite';
+        const label = document.createElement('span');
+        label.style.fontSize = '13px';
+        label.style.color = '#e2e8f0';
+        label.textContent = text;
+        card.append(spinner, label);
     }
     return card;
 }
@@ -1108,6 +1225,23 @@ async function saveProject() {
         return;
     }
 
+    try {
+        await waitForAuth();
+    } catch (error) {
+        alert(error.message);
+        return;
+    }
+
+    if (!currentUser) {
+        alert("You must be signed in before saving.");
+        return;
+    }
+
+    if (currentProjectId && currentProjectOwnerUid && currentProjectOwnerUid !== currentUser.uid) {
+        alert("This project belongs to another user. Fork it to save your own copy.");
+        return;
+    }
+
     const projectName = prompt("Project name:", "My Blitz Project");
     if (!projectName) return;
 
@@ -1119,7 +1253,8 @@ async function saveProject() {
         files: fileData,
         updatedAt: Date.now(),
         thumbnail: thumbnail || null,
-        forkedFrom: forkSourceProject
+        forkedFrom: forkSourceProject,
+        ownerUid: currentUser.uid
     };
 
     try {
@@ -1127,6 +1262,7 @@ async function saveProject() {
             // Update existing project
             const projRef = window.firebaseRef(window.firebaseDB, 'projects/' + currentProjectId);
             await window.firebaseSet(projRef, projectPayload);
+            currentProjectOwnerUid = currentUser.uid;
             console.log("Project updated:", currentProjectId);
         } else {
             // Create new project
@@ -1134,10 +1270,12 @@ async function saveProject() {
             const newRef = window.firebasePush(projListRef);
             currentProjectId = newRef.key;
             await window.firebaseSet(newRef, projectPayload);
+            currentProjectOwnerUid = currentUser.uid;
             // Update URL so refreshes keep the project loaded
             history.replaceState(null, '', 'editor.html?project=' + currentProjectId);
             console.log("Project created:", currentProjectId);
         }
+        updateSaveButtonState();
         alert("Project saved!");
     } catch (e) {
         console.error("Save failed:", e);
@@ -1164,6 +1302,7 @@ async function loadProject(projectId) {
         const data = snapshot.val();
         const isForkLoad = urlParams.get('forkOf') === projectId;
         currentProjectId = isForkLoad ? null : projectId;
+        currentProjectOwnerUid = isForkLoad ? null : (data.ownerUid || null);
         forkSourceProject = isForkLoad
             ? { id: projectId, name: data.name || 'Untitled' }
             : (data.forkedFrom || null);
@@ -1192,6 +1331,7 @@ async function loadProject(projectId) {
         if (files[activeFile]) editor.setModel(files[activeFile].model);
         renderFiles();
         updatePreview();
+        updateSaveButtonState();
         console.log("Project loaded:", projectId, data.name);
     } catch (e) {
         console.error("Load failed:", e);
