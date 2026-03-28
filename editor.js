@@ -140,6 +140,32 @@ function showDiff(filename, oldContent, newContent) {
 let currentPreviewPage = 'index.html';
 let activeBlobUrls = {}; // Track blob URLs to prevent memory leaks
 
+function buildRenderableHtml(pageToLoad = currentPreviewPage) {
+    if (!files[pageToLoad]) pageToLoad = Object.keys(files).find(f => f.endsWith('.html')) || 'index.html';
+
+    const assetUrls = {};
+    for (const [filename, fileObj] of Object.entries(files)) {
+        if (filename.endsWith('.html')) continue;
+        let type = 'text/plain';
+        if (filename.endsWith('.css')) type = 'text/css';
+        else if (filename.endsWith('.js')) type = 'application/javascript';
+        const blob = new Blob([fileObj.model.getValue()], { type });
+        assetUrls[filename] = URL.createObjectURL(blob);
+    }
+
+    let htmlContent = files[pageToLoad] ? files[pageToLoad].model.getValue() : "<h1>No valid HTML page found</h1>";
+
+    for (const [filename, url] of Object.entries(assetUrls)) {
+        const escapedFilename = filename.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const regexHref = new RegExp(`href=["']\\.?/?${escapedFilename}["']`, 'g');
+        const regexSrc = new RegExp(`src=["']\\.?/?${escapedFilename}["']`, 'g');
+        htmlContent = htmlContent.replace(regexHref, `href="${url}"`);
+        htmlContent = htmlContent.replace(regexSrc, `src="${url}"`);
+    }
+
+    return { pageToLoad, htmlContent, assetUrls };
+}
+
 window.addEventListener('message', (e) => {
     if (e.data && e.data.type === 'navigate') {
         let target = e.data.url;
@@ -156,32 +182,14 @@ window.addEventListener('message', (e) => {
 // Build Live Preview with multi-page and asset support
 function updatePreview(pageToLoad = currentPreviewPage) {
     try {
-        if (!files[pageToLoad]) pageToLoad = Object.keys(files).find(f => f.endsWith('.html')) || 'index.html';
-        currentPreviewPage = pageToLoad;
-        
+        const rendered = buildRenderableHtml(pageToLoad);
+        currentPreviewPage = rendered.pageToLoad;
+
         // Clean up old object URLs
         Object.values(activeBlobUrls).forEach(URL.revokeObjectURL);
-        activeBlobUrls = {};
+        activeBlobUrls = rendered.assetUrls;
 
-        // Generate blobs for all current assets (CSS/JS)
-        for (const [filename, fileObj] of Object.entries(files)) {
-            if (filename.endsWith('.html')) continue;
-            let type = 'text/plain';
-            if (filename.endsWith('.css')) type = 'text/css';
-            else if (filename.endsWith('.js')) type = 'application/javascript';
-            const blob = new Blob([fileObj.model.getValue()], { type });
-            activeBlobUrls[filename] = URL.createObjectURL(blob);
-        }
-
-        let htmlContent = files[pageToLoad] ? files[pageToLoad].model.getValue() : "<h1>No valid HTML page found</h1>";
-
-        // Map src and href to the new Blob URLs
-        for (const [filename, url] of Object.entries(activeBlobUrls)) {
-            const regexHref = new RegExp(`href=["']\\.?/?${filename}["']`, 'g');
-            const regexSrc = new RegExp(`src=["']\\.?/?${filename}["']`, 'g');
-            htmlContent = htmlContent.replace(regexHref, `href="${url}"`);
-            htmlContent = htmlContent.replace(regexSrc, `src="${url}"`);
-        }
+        let htmlContent = rendered.htmlContent;
 
         // Inject navigation interceptor script
         const interceptScript = `
@@ -1026,26 +1034,54 @@ setInterval(updateCredits, 5000);
 // =========================================
 
 let currentProjectId = null;
+let forkSourceProject = null;
 
 // Generate a tiny thumbnail from the preview iframe
 async function captureThumbnail() {
-    try {
-        const iframe = document.getElementById('preview-frame');
-        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-        if (!iframeDoc || !iframeDoc.body) return null;
+    const captureRoot = document.createElement('div');
+    captureRoot.style.position = 'fixed';
+    captureRoot.style.left = '-99999px';
+    captureRoot.style.top = '0';
+    captureRoot.style.width = '400px';
+    captureRoot.style.height = '300px';
+    captureRoot.style.overflow = 'hidden';
+    captureRoot.style.background = '#ffffff';
 
-        const canvas = await html2canvas(iframeDoc.body, {
+    try {
+        const rendered = buildRenderableHtml(currentPreviewPage);
+        const captureFrame = document.createElement('iframe');
+        captureFrame.setAttribute('sandbox', 'allow-scripts allow-same-origin');
+        captureFrame.style.width = '400px';
+        captureFrame.style.height = '300px';
+        captureFrame.style.border = 'none';
+        captureFrame.style.background = '#ffffff';
+        captureRoot.appendChild(captureFrame);
+        document.body.appendChild(captureRoot);
+
+        await new Promise((resolve) => {
+            captureFrame.onload = () => setTimeout(resolve, 250);
+            captureFrame.srcdoc = rendered.htmlContent;
+        });
+
+        const iframeDoc = captureFrame.contentDocument || captureFrame.contentWindow?.document;
+        if (!iframeDoc?.documentElement) return null;
+
+        const canvas = await html2canvas(iframeDoc.documentElement, {
             width: 400,
             height: 300,
-            scale: 0.5,
+            scale: 1,
             useCORS: true,
+            backgroundColor: '#ffffff',
             logging: false
         });
-        // Compress to tiny JPEG (quality 0.4 keeps it under ~15-30KB)
+
+        Object.values(rendered.assetUrls).forEach(URL.revokeObjectURL);
         return canvas.toDataURL('image/jpeg', 0.4);
     } catch (e) {
         console.warn("Thumbnail capture failed:", e);
         return null;
+    } finally {
+        captureRoot.remove();
     }
 }
 
@@ -1082,7 +1118,8 @@ async function saveProject() {
         name: projectName,
         files: fileData,
         updatedAt: Date.now(),
-        thumbnail: thumbnail || null
+        thumbnail: thumbnail || null,
+        forkedFrom: forkSourceProject
     };
 
     try {
@@ -1125,7 +1162,11 @@ async function loadProject(projectId) {
         }
 
         const data = snapshot.val();
-        currentProjectId = projectId;
+        const isForkLoad = urlParams.get('forkOf') === projectId;
+        currentProjectId = isForkLoad ? null : projectId;
+        forkSourceProject = isForkLoad
+            ? { id: projectId, name: data.name || 'Untitled' }
+            : (data.forkedFrom || null);
 
         // Clear existing files
         for (const name in files) {
@@ -1163,10 +1204,12 @@ document.querySelector('.save-btn').addEventListener('click', saveProject);
 // Check URL for ?project=ID on page load
 const urlParams = new URLSearchParams(window.location.search);
 const loadId = urlParams.get('project');
-if (loadId) {
+const forkId = urlParams.get('forkOf');
+const sourceId = forkId || loadId;
+if (sourceId) {
     if (window.firebaseReady) {
-        loadProject(loadId);
+        loadProject(sourceId);
     } else {
-        window.addEventListener('firebase-ready', () => loadProject(loadId), { once: true });
+        window.addEventListener('firebase-ready', () => loadProject(sourceId), { once: true });
     }
 }

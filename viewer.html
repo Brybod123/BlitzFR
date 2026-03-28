@@ -16,7 +16,10 @@
                 <img src="logo.svg" alt="Blitz Logo" class="dashboard-logo">
                 <h1 style="font-family:'Jersey 10'; margin:0; font-size:1.8rem;">BLITZ</h1>
             </a>
-            <span class="viewer-project-name" id="project-name">Loading...</span>
+            <div style="display:flex; flex-direction:column; gap:0.2rem;">
+                <span class="viewer-project-name" id="project-name">Loading...</span>
+                <span id="project-source" style="display:none; font-family:'VT323', monospace; font-size:1rem; color:#8ab4ff; text-transform:uppercase; letter-spacing:0.08em;"></span>
+            </div>
         </div>
         <div class="viewer-header-right">
             <button class="viewer-toggle-btn" id="btn-toggle-code" title="Toggle Code Viewer">
@@ -86,6 +89,13 @@
                 const data = snapshot.val();
                 document.getElementById('project-name').textContent = data.name || 'Untitled';
                 document.title = (data.name || 'Untitled') + ' - Blitz Viewer';
+                const sourceEl = document.getElementById('project-source');
+                if (data.forkedFrom?.name) {
+                    sourceEl.textContent = 'Forked from ' + data.forkedFrom.name;
+                    sourceEl.style.display = 'block';
+                } else {
+                    sourceEl.style.display = 'none';
+                }
 
                 // Decode files
                 if (data.files) {
@@ -103,7 +113,7 @@
 
                 // Wire fork button
                 document.getElementById('btn-fork').addEventListener('click', () => {
-                    window.location.href = 'editor.html?project=' + id;
+                    window.location.href = 'editor.html?forkOf=' + id;
                 });
 
             } catch (e) {

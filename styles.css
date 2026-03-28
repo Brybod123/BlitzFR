@@ -1203,6 +1203,15 @@ body.editor-page {
     padding: 16px;
 }
 
+.project-source-line {
+    color: #8ab4ff;
+    font-family: 'VT323', monospace;
+    font-size: 1rem;
+    margin: 6px 0 0;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
 .project-info h3 {
     margin: 0 0 6px 0;
     font-family: 'VT323', monospace;

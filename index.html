@@ -222,9 +222,20 @@
                 const info = document.createElement('div');
                 info.className = 'project-info';
                 const timeAgo = getTimeAgo(project.updatedAt);
-                const safeName = document.createElement('span');
-                safeName.textContent = project.name || 'Untitled Project';
-                info.innerHTML = '<h3>' + safeName.textContent + '</h3><p>Updated ' + timeAgo + '</p>';
+                const title = document.createElement('h3');
+                title.textContent = project.name || 'Untitled Project';
+                info.appendChild(title);
+
+                if (project.forkedFrom?.name) {
+                    const source = document.createElement('p');
+                    source.className = 'project-source-line';
+                    source.textContent = 'Forked from ' + project.forkedFrom.name;
+                    info.appendChild(source);
+                }
+
+                const updated = document.createElement('p');
+                updated.textContent = 'Updated ' + timeAgo;
+                info.appendChild(updated);
 
                 card.appendChild(preview);
                 card.appendChild(info);
