@@ -24,30 +24,39 @@ export default async (req, context) => {
         });
         const modelsData = await modelsRes.json();
 
-        // Calculate average tokens from recent activity (Filtered to this app if possible)
         let totalTokens = 0;
         let totalRequests = 0;
+        let accountTokens = 0;
+        let accountRequests = 0;
         
         if (activityData.data && Array.isArray(activityData.data)) {
-            // We search for items that match the Referer or models
-            activityData.data.forEach(item => {
-                // OpenRouter activity often uses endpoint_id or site_url
-                // If we can't find a clear site_name, we filter by the specific models this app uses
-                const isRelevantModel = [
-                    "qwen/qwen3.5-flash-02-23",
-                    "inception/mercury-2",
-                    "xiaomi/mimo-v2-omni",
-                    "openai/gpt-5.4-nano",
-                    "moonshotai/kimi-k2.5"
-                ].includes(item.model_permaslug || item.model);
+            const relevantModels = [
+                "qwen/qwen3.5-flash-02-23",
+                "inception/mercury-2",
+                "xiaomi/mimo-v2-omni",
+                "openai/gpt-5.4-nano",
+                "moonshotai/kimi-k2.5"
+            ];
 
+            activityData.data.forEach(item => {
+                const prompt = (item.prompt_tokens || 0);
+                const completion = (item.completion_tokens || 0);
+                const count = (item.requests || 0);
+                
+                accountTokens += (prompt + completion);
+                accountRequests += count;
+
+                const isRelevantModel = relevantModels.some(rm => (item.model_permaslug || item.model || "").includes(rm));
                 if (isRelevantModel) {
-                    totalTokens += (item.prompt_tokens || 0) + (item.completion_tokens || 0);
-                    totalRequests += (item.requests || 0);
+                    totalTokens += (prompt + completion);
+                    totalRequests += count;
                 }
             });
         }
-        const avgTokens = totalRequests > 0 ? (totalTokens / totalRequests) : 1000; // default to 1k
+        
+        const finalTokens = (totalRequests > 0) ? totalTokens : accountTokens;
+        const finalRequests = (totalRequests > 0) ? totalRequests : accountRequests;
+        const avgTokens = finalRequests > 0 ? (finalTokens / finalRequests) : 1200;
 
         // Map prices for relevant models
         const relevantModels = [
