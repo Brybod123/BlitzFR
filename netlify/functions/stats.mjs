@@ -56,7 +56,7 @@ export default async (req, context) => {
         
         const finalTokens = (totalRequests > 0) ? totalTokens : accountTokens;
         const finalRequests = (totalRequests > 0) ? totalRequests : accountRequests;
-        const avgTokens = finalRequests > 0 ? (finalTokens / finalRequests) : 1200;
+        const avgTokens = finalRequests > 0 ? (finalTokens / finalRequests) : 4000;
 
         // Map prices for relevant models
         const relevantModels = [
