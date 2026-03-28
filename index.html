@@ -207,7 +207,7 @@
             projects.forEach(project => {
                 const card = document.createElement('div');
                 card.className = 'project-card';
-                card.onclick = () => window.location.href = 'editor.html?project=' + project.id;
+                card.onclick = () => window.location.href = 'viewer.html?project=' + project.id;
 
                 const preview = document.createElement('div');
                 preview.className = 'project-preview';
