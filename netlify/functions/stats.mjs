@@ -59,8 +59,10 @@ export default async (req, context) => {
         const prices = {};
         if (modelsData.data) {
             modelsData.data.forEach(m => {
-                if (relevantModels.includes(m.id)) {
-                    prices[m.id] = (m.pricing.prompt + m.pricing.completion) / 2;
+                if (relevantModels.some(rm => m.id.includes(rm) || rm.includes(m.id))) {
+                    const promptPrice = parseFloat(m.pricing.prompt) || 0;
+                    const completionPrice = parseFloat(m.pricing.completion) || 0;
+                    prices[relevantModels.find(rm => m.id.includes(rm) || rm.includes(m.id))] = (promptPrice + completionPrice) / 2;
                 }
             });
         }

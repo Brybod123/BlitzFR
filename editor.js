@@ -604,8 +604,8 @@ async function updateModelStats() {
         ];
 
         models.forEach(m => {
-            const price = modelPrices[m.id] || 0;
-            const cost = (avgTokens * price).toFixed(4);
+            const price = parseFloat(modelPrices[m.id]) || 0;
+            const cost = (avgTokens * price).toFixed(6);
             const opt = document.createElement('div');
             opt.className = 'model-option';
             opt.dataset.value = m.id;
@@ -627,8 +627,8 @@ async function updateModelStats() {
 }
 
 function calculateEstimatedCost(modelId) {
-    const pricePerToken = modelPrices[modelId] || 0;
-    const estCost = (avgTokens * pricePerToken).toFixed(4);
+    const pricePerToken = parseFloat(modelPrices[modelId]) || 0;
+    const estCost = (avgTokens * pricePerToken).toFixed(6);
     document.getElementById('avg-cost-val').textContent = `$${estCost}`;
 }
 
