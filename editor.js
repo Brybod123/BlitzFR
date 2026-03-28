@@ -393,7 +393,7 @@ async function runChatLoop(bubble, turn = 1) {
         ...chatMessages.slice(1)
     ];
 
-    const currentModelId = document.getElementById('model-dropdown-trigger').dataset.value || "qwen/qwen-2.5-72b-instruct";
+    const currentModelId = document.getElementById('model-dropdown-trigger').dataset.value || "qwen/qwen3.5-flash-02-23";
 
     try {
         const response = await fetch('/api/chat', {
@@ -568,19 +568,17 @@ const modelNameSpan = document.getElementById('current-model-name');
 let avgTokens = 1000;
 let modelPrices = {};
 
-dropdownTrigger.addEventListener('click', () => {
+// Bootstrap the trigger value
+dropdownTrigger.dataset.value = "qwen/qwen3.5-flash-02-23";
+
+dropdownTrigger.addEventListener('click', (e) => {
+    e.stopPropagation();
     dropdownList.classList.toggle('hidden');
 });
 
-document.querySelectorAll('.model-option').forEach(opt => {
-    opt.addEventListener('click', () => {
-        const val = opt.dataset.value;
-        const name = opt.dataset.name;
-        dropdownTrigger.dataset.value = val;
-        modelNameSpan.textContent = name;
-        dropdownList.classList.add('hidden');
-        calculateEstimatedCost(val);
-    });
+// Close when clicking outside
+window.addEventListener('click', () => {
+    dropdownList.classList.add('hidden');
 });
 
 async function updateModelStats() {
@@ -589,7 +587,40 @@ async function updateModelStats() {
         const data = await res.json();
         avgTokens = data.avgTokens || 1000;
         modelPrices = data.prices || {};
-        calculateEstimatedCost(dropdownTrigger.dataset.value || "qwen/qwen-2.5-72b-instruct");
+        
+        // Update current cost estimate
+        const currentModelId = dropdownTrigger.dataset.value || "qwen/qwen3.5-flash-02-23";
+        calculateEstimatedCost(currentModelId);
+        
+        // Re-render dropdown list options with costs
+        const list = document.getElementById('model-dropdown-list');
+        list.innerHTML = '';
+        
+        const models = [
+            { id: "qwen/qwen3.5-flash-02-23", name: "Qwen 3.5 Flash" },
+            { id: "inception/mercury-2", name: "Mercury 2" },
+            { id: "xiaomi/mimo-v2-omni", name: "Mimo v2 Omni" },
+            { id: "openai/gpt-5.4-nano", name: "GPT 5.4 Nano" }
+        ];
+
+        models.forEach(m => {
+            const price = modelPrices[m.id] || 0;
+            const cost = (avgTokens * price).toFixed(4);
+            const opt = document.createElement('div');
+            opt.className = 'model-option';
+            opt.dataset.value = m.id;
+            opt.dataset.name = m.name;
+            opt.innerHTML = `${m.name} <span style="opacity: 0.5; margin-left: auto;">~$${cost}/req</span>`;
+            
+            opt.addEventListener('click', () => {
+                dropdownTrigger.dataset.value = m.id;
+                modelNameSpan.textContent = m.name;
+                dropdownList.classList.add('hidden');
+                calculateEstimatedCost(m.id);
+            });
+            list.appendChild(opt);
+        });
+
     } catch (e) {
         console.error("Stats fetch failed", e);
     }

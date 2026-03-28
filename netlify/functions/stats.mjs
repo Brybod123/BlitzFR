@@ -24,20 +24,33 @@ export default async (req, context) => {
         });
         const modelsData = await modelsRes.json();
 
-        // Calculate average tokens from recent activity
+        // Calculate average tokens from recent activity (Filtered to this app if possible)
         let totalTokens = 0;
         let totalRequests = 0;
+        
         if (activityData.data && Array.isArray(activityData.data)) {
+            // We search for items that match the Referer or models
             activityData.data.forEach(item => {
-                totalTokens += (item.prompt_tokens || 0) + (item.completion_tokens || 0);
-                totalRequests += (item.requests || 0);
+                // OpenRouter activity often uses endpoint_id or site_url
+                // If we can't find a clear site_name, we filter by the specific models this app uses
+                const isRelevantModel = [
+                    "qwen/qwen3.5-flash-02-23",
+                    "inception/mercury-2",
+                    "xiaomi/mimo-v2-omni",
+                    "openai/gpt-5.4-nano"
+                ].includes(item.model_permaslug || item.model);
+
+                if (isRelevantModel) {
+                    totalTokens += (item.prompt_tokens || 0) + (item.completion_tokens || 0);
+                    totalRequests += (item.requests || 0);
+                }
             });
         }
         const avgTokens = totalRequests > 0 ? (totalTokens / totalRequests) : 1000; // default to 1k
 
         // Map prices for relevant models
         const relevantModels = [
-            "qwen/qwen-2.5-72b-instruct",
+            "qwen/qwen3.5-flash-02-23",
             "inception/mercury-2",
             "xiaomi/mimo-v2-omni",
             "openai/gpt-5.4-nano"
