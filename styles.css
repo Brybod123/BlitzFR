@@ -25,19 +25,20 @@ body.home-page img {
 }
 
 body.home-page h1 {
+    font-family: 'Jersey 10', sans-serif;
     font-size: 5rem;
     margin-bottom: 2rem;
 }
 
 body.home-page button {
-    font-family: "Bytesized", sans-serif;
+    font-family: 'VT323', monospace;
     padding: 1rem 2rem;
     border: 2px solid #0088ff;
     border-radius: 0.5rem;
     background-color: transparent;
     color: #00ffff;
     cursor: pointer;
-    font-size: 2rem;
+    font-size: 2.5rem;
     text-shadow: 0 0 10px #00ffff;
     box-shadow: 0 0 15px rgba(0, 136, 255, 0.3);
 }
@@ -50,15 +51,19 @@ body.home-page button:hover {
 }
 
 .help-btn {
+    font-family: 'VT323', monospace;
     margin-top: 1rem;
-    padding: 0.5rem 1rem;
-    font-size: 1.2rem;
-    border-radius: 50%;
-    width: 40px;
+    padding: 0.5rem 1.5rem;
+    font-size: 1.5rem;
+    border-radius: 8px;
     height: 40px;
     display: flex;
     align-items: center;
     justify-content: center;
+    border: 1px solid #0088ff;
+    color: #4a90e2;
+    background: transparent;
+    cursor: pointer;
 }
 
 .modal-overlay {
