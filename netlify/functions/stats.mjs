@@ -71,7 +71,10 @@ export default async (req, context) => {
             avgTokens,
             prices
         }), {
-            headers: { "Content-Type": "application/json" }
+            headers: { 
+                "Content-Type": "application/json",
+                "Cache-Control": "no-store, max-age=0"
+            }
         });
     } catch (err) {
         return new Response('Server Error', { status: 500 });

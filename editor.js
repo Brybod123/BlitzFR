@@ -438,6 +438,7 @@ async function runChatLoop(bubble, turn = 1) {
         
         chatMessages.push({ role: 'assistant', content: aiContent });
         updateCredits();
+        updateModelStats(); // Market refresh
 
         // Parse and Execute Tools
         const needsReply = executeAiTools(aiContent);
@@ -641,7 +642,7 @@ function calculateEstimatedCost(modelId) {
 }
 
 updateModelStats();
-setInterval(updateModelStats, 30000); // refresh every 30s
+setInterval(updateModelStats, 5000); // refresh every 5s
 
 const creditsModal = document.getElementById('credits-modal');
 if (document.getElementById('btn-credits-about')) {
