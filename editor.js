@@ -216,42 +216,6 @@ window.addEventListener('firebase-auth-ready', () => {
 
 updateSaveButtonState();
 
-async function getHtml2Canvas() {
-    if (typeof window.html2canvas === 'function') return window.html2canvas;
-
-    if (!window.__blitzHtml2CanvasLoading) {
-        window.__blitzHtml2CanvasLoading = new Promise((resolve, reject) => {
-            const script = document.createElement('script');
-            script.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
-            script.onload = resolve;
-            script.onerror = () => reject(new Error('html2canvas script failed to load.'));
-            document.head.appendChild(script);
-        });
-    }
-
-    try {
-        await window.__blitzHtml2CanvasLoading;
-    } catch (error) {
-        throw error;
-    }
-
-    return new Promise((resolve, reject) => {
-        const startedAt = Date.now();
-        const timer = setInterval(() => {
-            if (typeof window.html2canvas === 'function') {
-                clearInterval(timer);
-                resolve(window.html2canvas);
-                return;
-            }
-
-            if (Date.now() - startedAt > 5000) {
-                clearInterval(timer);
-                reject(new Error('html2canvas failed to load.'));
-            }
-        }, 50);
-    });
-}
-
 function showDiff(filename, oldContent, newContent) {
     const originalModel = monaco.editor.createModel(oldContent, files[filename].lang);
     const modifiedModel = monaco.editor.createModel(newContent, files[filename].lang);
@@ -1219,8 +1183,6 @@ async function captureThumbnail() {
 
     try {
         console.log('[thumbnail] capture start', { currentPreviewPage, fileCount: Object.keys(files).length });
-        const html2canvasLib = await getHtml2Canvas();
-        console.log('[thumbnail] html2canvas ready');
         const rendered = buildRenderableHtml(currentPreviewPage);
         console.log('[thumbnail] renderable html ready', {
             page: rendered.pageToLoad,
@@ -1267,17 +1229,39 @@ async function captureThumbnail() {
         await Promise.all(assetLoads);
         console.log('[thumbnail] assets settled', { imageCount: (iframeDoc.images || []).length });
 
-        const canvas = await html2canvasLib(iframeDoc.documentElement, {
-            width: 400,
-            height: 300,
-            scale: 1,
-            useCORS: true,
-            backgroundColor: '#ffffff',
-            logging: false
+        const serializedHtml = new XMLSerializer().serializeToString(iframeDoc.documentElement);
+        const svgMarkup = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300">
+                <foreignObject width="100%" height="100%">
+                    ${serializedHtml}
+                </foreignObject>
+            </svg>
+        `;
+        const svgBlobUrl = URL.createObjectURL(new Blob([svgMarkup], { type: 'image/svg+xml;charset=utf-8' }));
+        console.log('[thumbnail] svg prepared', { length: svgMarkup.length });
+
+        const image = new Image();
+        image.decoding = 'async';
+
+        await new Promise((resolve, reject) => {
+            image.onload = resolve;
+            image.onerror = () => reject(new Error('SVG thumbnail image failed to load.'));
+            image.src = svgBlobUrl;
         });
-        console.log('[thumbnail] html2canvas complete', { width: canvas.width, height: canvas.height });
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 400;
+        canvas.height = 300;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Canvas context unavailable for thumbnail rendering.');
+
+        context.fillStyle = '#ffffff';
+        context.fillRect(0, 0, canvas.width, canvas.height);
+        context.drawImage(image, 0, 0, canvas.width, canvas.height);
+        console.log('[thumbnail] canvas render complete', { width: canvas.width, height: canvas.height });
 
         URL.revokeObjectURL(htmlBlobUrl);
+        URL.revokeObjectURL(svgBlobUrl);
         Object.values(rendered.assetUrls).forEach(URL.revokeObjectURL);
         const dataUrl = canvas.toDataURL('image/jpeg', 0.4);
         console.log('[thumbnail] data url generated', { length: dataUrl.length });
