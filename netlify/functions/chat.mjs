@@ -3,7 +3,17 @@ export default async (req, context) => {
         return new Response('Method Not Allowed', { status: 405 });
     }
 
-    const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+    // Support both Node fallback and Netlify Edge logic
+    let OPENROUTER_API_KEY = "";
+    if (typeof process !== 'undefined' && process.env.OPENROUTER_API_KEY) {
+        OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+    } else if (typeof Netlify !== 'undefined') {
+        OPENROUTER_API_KEY = Netlify.env.get("OPENROUTER_API_KEY");
+    }
+
+    if (!OPENROUTER_API_KEY) {
+        return new Response('Server Error: OPENROUTER_API_KEY environment variable is not set.', { status: 401 });
+    }
 
     let body;
     try {
@@ -29,8 +39,9 @@ export default async (req, context) => {
         });
 
         if (!response.ok) {
-            console.error("OpenRouter API Error:", await response.text());
-            return new Response('Upstream API error', { status: response.status });
+            const errorText = await response.text();
+            console.error("OpenRouter API Error:", errorText);
+            return new Response(`Upstream API error: ${response.status} - ${errorText}`, { status: response.status });
         }
 
         return new Response(response.body, {
