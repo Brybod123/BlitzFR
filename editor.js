@@ -349,6 +349,13 @@ generateBtn.addEventListener('click', async () => {
     generateBtn.disabled = true;
     const bubble = aiMsg.querySelector('.chat-bubble');
 
+    await runChatLoop(bubble);
+    generateBtn.disabled = false;
+});
+
+async function runChatLoop(bubble, turn = 1) {
+    if (turn > 3) return; // Safeguard
+
     // Inject current file context into the request
     const fileContext = Object.keys(files).map(f => `- ${f}`).join('\n');
     const tempMessages = [
@@ -365,14 +372,15 @@ generateBtn.addEventListener('click', async () => {
 
         if (!response.ok) {
             bubble.textContent = "Error communicating with AI.";
-            generateBtn.disabled = false;
             return;
         }
 
         const reader = response.body.getReader();
         const decoder = new TextDecoder("utf-8");
         let aiContent = "";
-        bubble.textContent = "";
+        
+        // Only clear bubble on first turn of a response
+        if (turn === 1) bubble.textContent = "";
 
         while (true) {
             const { value, done } = await reader.read();
@@ -389,6 +397,7 @@ generateBtn.addEventListener('click', async () => {
                         const json = JSON.parse(dataStr);
                         if (json.choices && json.choices[0].delta && json.choices[0].delta.content) {
                             aiContent += json.choices[0].delta.content;
+                            // Clean up tags in UI if you want, or just show them
                             bubble.textContent = aiContent;
                             chatHistory.scrollTop = chatHistory.scrollHeight;
                         }
@@ -397,26 +406,34 @@ generateBtn.addEventListener('click', async () => {
             }
         }
         
-        // Parse and Execute Tools
-        executeAiTools(aiContent);
-        
         chatMessages.push({ role: 'assistant', content: aiContent });
+
+        // Parse and Execute Tools
+        const needsReply = executeAiTools(aiContent);
+        
+        if (needsReply) {
+            // Add a small delay for UI feel
+            bubble.textContent += "\n(Processing tools...)";
+            await new Promise(r => setTimeout(r, 500));
+            await runChatLoop(bubble, turn + 1);
+        }
     } catch (err) {
         console.error(err);
         bubble.textContent = "Connection error.";
     }
-
-    generateBtn.disabled = false;
-});
+}
 
 function executeAiTools(content) {
-    // Read Files
+    let contextAdded = false;
+
+    // Read Files - This ADDS context but doesn't modify the project
     const readMatches = content.matchAll(/<read_file path="([^"]+)"\/>/g);
     for (const match of readMatches) {
         const path = match[1];
         if (files[path]) {
             const fileData = files[path].model.getValue();
             chatMessages.push({ role: 'system', content: `Content of ${path}:\n${fileData}` });
+            contextAdded = true;
         }
     }
 
@@ -437,4 +454,6 @@ function executeAiTools(content) {
     for (const match of deleteMatches) {
         if (files[match[1]]) deleteFile(match[1]);
     }
+
+    return contextAdded;
 }
