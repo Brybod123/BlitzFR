@@ -24,8 +24,11 @@ export default async (req, context) => {
         }
 
         const data = await response.json();
+        // Calculation: Balance = Purchased - Consumed
+        const balance = data.data.total_credits - data.data.total_usage;
+        
         return new Response(JSON.stringify({
-            credits: data.data.total_credits
+            credits: balance
         }), {
             headers: { "Content-Type": "application/json" }
         });
