@@ -24,26 +24,11 @@ export default async (req, context) => {
         }
 
         const data = await response.json();
+        // Calculation: Balance = Purchased - Consumed
         const balance = data.data.total_credits - data.data.total_usage;
-
-        // Daily Hard Cap Logic ($2.00)
-        const activityRes = await fetch("https://openrouter.ai/api/v1/activity", {
-            headers: { "Authorization": `Bearer ${OPENROUTER_API_KEY}` }
-        });
-        const activityData = await activityRes.json();
-        const todayStr = new Date().toISOString().split('T')[0];
-        let todayUsage = 0;
-        if (activityData.data) {
-            activityData.data.forEach(item => {
-                if (item.date === todayStr) todayUsage += (item.usage || 0);
-            });
-        }
-
-        const cappedBalance = (todayUsage >= 2.0) ? 0 : balance;
         
         return new Response(JSON.stringify({
-            credits: cappedBalance,
-            todayUsage: todayUsage
+            credits: balance
         }), {
             headers: { "Content-Type": "application/json" }
         });
