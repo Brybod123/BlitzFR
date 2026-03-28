@@ -1219,6 +1219,32 @@ function svgToDataUrl(svgMarkup) {
     return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svgMarkup)}`;
 }
 
+function inlineThumbnailAssets(iframeDoc, rendered) {
+    for (const [filename, assetUrl] of Object.entries(rendered.assetUrls)) {
+        if (filename.endsWith('.css')) {
+            iframeDoc.querySelectorAll('link').forEach((linkEl) => {
+                const href = linkEl.getAttribute('href');
+                if (href === assetUrl) {
+                    const styleEl = iframeDoc.createElement('style');
+                    styleEl.textContent = files[filename]?.model.getValue() || '';
+                    linkEl.replaceWith(styleEl);
+                }
+            });
+            continue;
+        }
+
+        if (filename.endsWith('.js')) {
+            iframeDoc.querySelectorAll('script').forEach((scriptEl) => {
+                const src = scriptEl.getAttribute('src');
+                if (src === assetUrl) {
+                    scriptEl.removeAttribute('src');
+                    scriptEl.textContent = '';
+                }
+            });
+        }
+    }
+}
+
 // Generate a tiny thumbnail from the preview iframe
 async function captureThumbnail(projectName = 'Untitled Project') {
     const captureRoot = document.createElement('div');
@@ -1277,6 +1303,9 @@ async function captureThumbnail(projectName = 'Untitled Project') {
         });
         await Promise.all(assetLoads);
         console.log('[thumbnail] assets settled', { imageCount: (iframeDoc.images || []).length });
+
+        inlineThumbnailAssets(iframeDoc, rendered);
+        console.log('[thumbnail] local assets inlined');
 
         const serializedHtml = new XMLSerializer().serializeToString(iframeDoc.documentElement);
         const svgMarkup = `
