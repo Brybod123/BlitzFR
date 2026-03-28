@@ -103,6 +103,8 @@ let files = {
 let activeFile = 'index.html';
 let currentUser = window.firebaseUser || null;
 let currentProjectOwnerUid = null;
+let currentProjectId = null;
+let forkSourceProject = null;
 
 // Create editor
 const editor = monaco.editor.create(document.getElementById('monaco-container'), {
@@ -1166,9 +1168,6 @@ setInterval(updateCredits, 5000);
 // =========================================
 // Firebase RTDB Save/Load Project Logic
 // =========================================
-
-let currentProjectId = null;
-let forkSourceProject = null;
 
 // Generate a tiny thumbnail from the preview iframe
 async function captureThumbnail() {
