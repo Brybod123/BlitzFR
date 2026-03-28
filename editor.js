@@ -393,15 +393,14 @@ async function runChatLoop(bubble, turn = 1) {
         ...chatMessages.slice(1)
     ];
 
-    const modelSelect = document.getElementById('model-select');
-    const selectedModel = modelSelect?.value || "qwen/qwen-2.5-72b-instruct";
+    const currentModelId = document.getElementById('model-dropdown-trigger').dataset.value || "qwen/qwen-2.5-72b-instruct";
 
     try {
         const response = await fetch('/api/chat', {
             method: 'POST',
             body: JSON.stringify({ 
                 messages: tempMessages,
-                model: selectedModel
+                model: currentModelId
             })
         });
 
@@ -562,9 +561,56 @@ async function updateCredits() {
 }
 updateCredits();
 
+// Model Dropdown Logic
+const dropdownTrigger = document.getElementById('model-dropdown-trigger');
+const dropdownList = document.getElementById('model-dropdown-list');
+const modelNameSpan = document.getElementById('current-model-name');
+let avgTokens = 1000;
+let modelPrices = {};
+
+dropdownTrigger.addEventListener('click', () => {
+    dropdownList.classList.toggle('hidden');
+});
+
+document.querySelectorAll('.model-option').forEach(opt => {
+    opt.addEventListener('click', () => {
+        const val = opt.dataset.value;
+        const name = opt.dataset.name;
+        dropdownTrigger.dataset.value = val;
+        modelNameSpan.textContent = name;
+        dropdownList.classList.add('hidden');
+        calculateEstimatedCost(val);
+    });
+});
+
+async function updateModelStats() {
+    try {
+        const res = await fetch('/api/stats');
+        const data = await res.json();
+        avgTokens = data.avgTokens || 1000;
+        modelPrices = data.prices || {};
+        calculateEstimatedCost(dropdownTrigger.dataset.value || "qwen/qwen-2.5-72b-instruct");
+    } catch (e) {
+        console.error("Stats fetch failed", e);
+    }
+}
+
+function calculateEstimatedCost(modelId) {
+    const pricePerToken = modelPrices[modelId] || 0;
+    const estCost = (avgTokens * pricePerToken).toFixed(4);
+    document.getElementById('avg-cost-val').textContent = `$${estCost}`;
+}
+
+updateModelStats();
+setInterval(updateModelStats, 30000); // refresh every 30s
+
 const creditsModal = document.getElementById('credits-modal');
-document.getElementById('btn-credits-about').addEventListener('click', () => creditsModal.classList.remove('hidden'));
-document.getElementById('btn-close-credits').addEventListener('click', () => creditsModal.classList.add('hidden'));
+if (document.getElementById('btn-credits-about')) {
+    document.getElementById('btn-credits-about').addEventListener('click', () => creditsModal.classList.remove('hidden'));
+}
+if (document.getElementById('btn-close-credits')) {
+    document.getElementById('btn-close-credits').addEventListener('click', () => creditsModal.classList.add('hidden'));
+}
 
 function createToolCard(text, isDone, type, path, diffData) {
     const card = document.createElement('div');
