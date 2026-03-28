@@ -37,7 +37,8 @@ export default async (req, context) => {
                     "qwen/qwen3.5-flash-02-23",
                     "inception/mercury-2",
                     "xiaomi/mimo-v2-omni",
-                    "openai/gpt-5.4-nano"
+                    "openai/gpt-5.4-nano",
+                    "moonshotai/kimi-k2.5"
                 ].includes(item.model_permaslug || item.model);
 
                 if (isRelevantModel) {
@@ -53,7 +54,8 @@ export default async (req, context) => {
             "qwen/qwen3.5-flash-02-23",
             "inception/mercury-2",
             "xiaomi/mimo-v2-omni",
-            "openai/gpt-5.4-nano"
+            "openai/gpt-5.4-nano",
+            "moonshotai/kimi-k2.5"
         ];
         
         const prices = {};

@@ -608,7 +608,8 @@ async function updateModelStats() {
             { id: "qwen/qwen3.5-flash-02-23", name: "Qwen 3.5 Flash" },
             { id: "inception/mercury-2", name: "Mercury 2" },
             { id: "xiaomi/mimo-v2-omni", name: "Mimo v2 Omni" },
-            { id: "openai/gpt-5.4-nano", name: "GPT 5.4 Nano" }
+            { id: "openai/gpt-5.4-nano", name: "GPT 5.4 Nano" },
+            { id: "moonshotai/kimi-k2.5", name: "Kimi K2.5" }
         ];
 
 
