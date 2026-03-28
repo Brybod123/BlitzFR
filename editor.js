@@ -515,8 +515,8 @@ async function updateCredits() {
         const bar = document.getElementById('credits-bar');
         const text = document.getElementById('credits-text');
         
-        // Visualization: Scale 50-100 to 0-100%
-        const percentage = Math.max(0, Math.min(100, (credits - 50) * 2));
+        // Visualization: Scale 0-100 to 0-100%
+        const percentage = Math.max(0, Math.min(100, credits));
         bar.style.width = percentage + '%';
         text.textContent = `$${credits.toFixed(2)} credits remaining`;
         
@@ -536,6 +536,10 @@ async function updateCredits() {
     }
 }
 updateCredits();
+
+const creditsModal = document.getElementById('credits-modal');
+document.getElementById('btn-credits-about').addEventListener('click', () => creditsModal.classList.remove('hidden'));
+document.getElementById('btn-close-credits').addEventListener('click', () => creditsModal.classList.add('hidden'));
 
 function createToolCard(text, isDone) {
     const card = document.createElement('div');

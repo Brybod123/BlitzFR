@@ -16,15 +16,24 @@
     <h1>Blitz</h1>
 
     <button>Create</button>
-    <div class="credits-bar-container-mini">
-        <div class="credits-bar-wrapper mini">
-            <div id="credits-bar" class="credits-bar"></div>
+        <div class="credits-bar-container-mini">
+            <div class="credits-bar-wrapper mini">
+                <div id="credits-bar" class="credits-bar"></div>
+            </div>
+            <button class="credits-about-btn mini" id="btn-credits-about">?</button>
         </div>
-        <button class="credits-about-btn mini">?</button>
-        <div class="credits-tooltip">
-            This is the credits i currently have, i know your requests drain almost nothing out of it, but as long as the bar is green, requests stay free for everyone, depending on the color of the bar, limitd will be enforced to protect costs, the bar resets every week.
+        
+        <div id="credits-modal" class="modal-overlay hidden">
+            <div class="modal">
+                <div class="modal-header">
+                    <h3>ABOUT CREDITS</h3>
+                    <button class="modal-close" id="btn-close-credits">✕</button>
+                </div>
+                <div class="modal-body">
+                    <p>This is the credits i currently have, i know your requests drain almost nothing out of it, but as long as the bar is green, requests stay free for everyone, depending on the color of the bar, limitd will be enforced to protect costs, the bar resets every week.</p>
+                </div>
+            </div>
         </div>
-    </div>
     
     <div class="modal-overlay" id="modal-overlay">
         <div class="modal">
@@ -43,9 +52,8 @@
                 const { credits } = await res.json();
                 const bar = document.getElementById('credits-bar');
                 
-                // Assuming max is 100 for percentage visualization?
-                // Scale 50 (black) to 100 (full green)
-                const percentage = Math.max(0, Math.min(100, (credits - 50) * 2));
+                // Scale to 0-100% directly
+                const percentage = Math.max(0, Math.min(100, credits));
                 bar.style.width = percentage + '%';
                 
                 if (credits <= 50) bar.style.background = 'black';
@@ -55,6 +63,10 @@
             } catch (e) {}
         }
         updateCredits();
+
+        const creditsModal = document.getElementById('credits-modal');
+        document.getElementById('btn-credits-about').addEventListener('click', () => creditsModal.classList.remove('hidden'));
+        document.getElementById('btn-close-credits').addEventListener('click', () => creditsModal.classList.add('hidden'));
     </script>
 </body>
 

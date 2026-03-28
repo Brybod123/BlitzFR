@@ -80,9 +80,18 @@
                         </div>
                         <div class="credits-info">
                             <span id="credits-text">Loading credits...</span>
-                            <button class="credits-about-btn" title="About Credits">?</button>
-                            <div class="credits-tooltip">
-                                This is the credits i currently have, i know your requests drain almost nothing out of it, but as long as the bar is green, requests stay free for everyone, depending on the color of the bar, limitd will be enforced to protect costs, the bar resets every week.
+                            <button class="credits-about-btn" id="btn-credits-about">?</button>
+                        </div>
+                    </div>
+                    
+                    <div id="credits-modal" class="modal-overlay hidden">
+                        <div class="modal">
+                            <div class="modal-header">
+                                <h3>ABOUT CREDITS</h3>
+                                <button class="modal-close" id="btn-close-credits">✕</button>
+                            </div>
+                            <div class="modal-body">
+                                <p>This is the credits i currently have, i know your requests drain almost nothing out of it, but as long as the bar is green, requests stay free for everyone, depending on the color of the bar, limitd will be enforced to protect costs, the bar resets every week.</p>
                             </div>
                         </div>
                     </div>
