@@ -253,9 +253,11 @@
                 const creatorLine = project.ownerUid
                     ? '<a class="project-owner-link" onclick="event.stopPropagation()" href="profile.html?user=' + encodeURIComponent(project.ownerUid) + '">by ' + escapeHtml(creatorName) + '</a>'
                     : '<span class="project-owner-muted">by Unknown creator</span>';
+                const viewCount = Number(project.views) || 0;
                 info.innerHTML = '<h3>' + safeName.textContent + '</h3>' +
                     '<p>Updated ' + timeAgo + '</p>' +
-                    '<p class="project-source-line">' + creatorLine + '</p>';
+                    '<p class="project-source-line">' + creatorLine + '</p>' +
+                    '<p>' + viewCount + ' view' + (viewCount === 1 ? '' : 's') + '</p>';
 
                 card.appendChild(preview);
                 card.appendChild(info);
