@@ -1701,24 +1701,45 @@ body.editor-page {
 }
 
 .template-new-card {
-    border-color: #7c3aed;
-    box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.12), 0 0 24px rgba(139, 92, 246, 0.18);
+    border-color: rgba(168, 85, 247, 0.7);
+    background:
+        radial-gradient(circle at top left, rgba(217, 70, 239, 0.22), transparent 36%),
+        radial-gradient(circle at bottom right, rgba(59, 130, 246, 0.18), transparent 34%),
+        linear-gradient(160deg, rgba(17, 24, 39, 0.96), rgba(30, 41, 59, 0.94));
+    box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.12), 0 18px 36px rgba(88, 28, 135, 0.28);
+    position: relative;
+    overflow: hidden;
 }
 
 .template-new-card:hover {
-    border-color: #c084fc;
-    background: rgba(139, 92, 246, 0.06);
-    box-shadow: 0 0 24px rgba(168, 85, 247, 0.32);
+    border-color: #e879f9;
+    box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.22), 0 22px 44px rgba(88, 28, 135, 0.38);
 }
 
 .template-new-card .create-icon {
-    background: rgba(139, 92, 246, 0.18);
-    color: #d8b4fe;
+    background: linear-gradient(135deg, rgba(216, 180, 254, 0.24), rgba(56, 189, 248, 0.24));
+    color: #f5d0fe;
+    box-shadow: 0 10px 24px rgba(168, 85, 247, 0.2);
 }
 
 .template-new-card:hover .create-icon {
-    background: #8b5cf6;
+    background: linear-gradient(135deg, #a855f7, #38bdf8);
     color: #ffffff;
+}
+
+.template-card-kicker {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 12px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #fde68a;
+    background: rgba(245, 158, 11, 0.12);
+    border: 1px solid rgba(245, 158, 11, 0.24);
 }
 
 .create-new-card h3 {
@@ -1737,12 +1758,12 @@ body.editor-page {
 }
 
 .template-new-card h3 {
-    color: #f5d0fe;
-    text-shadow: 0 0 8px rgba(168, 85, 247, 0.28);
+    color: #ffffff;
+    text-shadow: 0 0 12px rgba(168, 85, 247, 0.24);
 }
 
 .template-new-card p {
-    color: #c4b5fd;
+    color: #ddd6fe;
 }
 
 .template-modal {
@@ -1770,6 +1791,31 @@ body.editor-page {
 .template-choice-btn:hover {
     background: rgba(168, 85, 247, 0.24);
     border-color: #d8b4fe;
+}
+
+.template-choice-btn[data-template="blank"] {
+    background: rgba(14, 165, 233, 0.12);
+    border-color: rgba(14, 165, 233, 0.3);
+}
+
+.template-choice-btn[data-template="default"] {
+    background: rgba(34, 211, 238, 0.12);
+    border-color: rgba(34, 211, 238, 0.28);
+}
+
+.template-choice-btn[data-template="liquid-glass"] {
+    background: rgba(192, 132, 252, 0.12);
+    border-color: rgba(192, 132, 252, 0.28);
+}
+
+.template-choice-btn[data-template="platformer"] {
+    background: rgba(245, 158, 11, 0.12);
+    border-color: rgba(245, 158, 11, 0.28);
+}
+
+.template-choice-btn[data-template="clicker"] {
+    background: rgba(236, 72, 153, 0.12);
+    border-color: rgba(236, 72, 153, 0.28);
 }
 
 /* ===== PROFILE PAGE ===== */

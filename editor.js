@@ -54,42 +54,43 @@ const starterTemplates = {
     default: {
         html: wrapTemplateHtml('Blitz Default', `    <main class="default-app">
         <section class="default-hero">
-            <span class="eyebrow">Starter template</span>
-            <h1>Build something clean, fast, and intentional.</h1>
+            <span class="eyebrow">Editorial starter</span>
+            <h1>Design a clear landing page without fighting the layout.</h1>
             <p>
-                Start here when you want a polished landing page with enough structure to grow into a real app.
+                A clean, flat starting point for products, docs, or portfolios. It avoids glass and keeps the
+                emphasis on typography, spacing, and structure.
             </p>
             <div class="hero-actions">
-                <button id="primary-cta" class="primary-btn">Get Started</button>
-                <span class="status-pill">Ready to edit</span>
+                <button id="primary-cta" class="primary-btn">Ship the concept</button>
+                <span class="status-pill">Plain, fast, readable</span>
             </div>
         </section>
 
         <aside class="default-panel">
             <div class="metric">
-                <strong>3</strong>
                 <span>Files</span>
+                <strong>3</strong>
             </div>
             <div class="metric">
-                <strong>1</strong>
-                <span>Action</span>
+                <span>Theme</span>
+                <strong>Flat</strong>
             </div>
             <div class="metric">
-                <strong>100%</strong>
-                <span>Editable</span>
+                <span>State</span>
+                <strong id="default-state">Ready</strong>
             </div>
         </aside>
     </main>`),
         css: `:root {
     color-scheme: dark;
-    --bg: #080b14;
-    --bg-accent: #111827;
-    --panel: rgba(14, 19, 34, 0.82);
-    --panel-border: rgba(148, 163, 184, 0.18);
-    --text: #e2e8f0;
+    --bg: #0b0f16;
+    --bg-alt: #111827;
+    --panel: #0f172a;
+    --panel-border: rgba(148, 163, 184, 0.16);
+    --text: #f8fafc;
     --muted: #94a3b8;
     --accent: #22d3ee;
-    --accent-2: #8b5cf6;
+    --accent-2: #f97316;
 }
 
 * {
@@ -102,16 +103,15 @@ body {
     font-family: Inter, system-ui, sans-serif;
     color: var(--text);
     background:
-        radial-gradient(circle at top left, rgba(34, 211, 238, 0.16), transparent 32%),
-        radial-gradient(circle at top right, rgba(139, 92, 246, 0.22), transparent 28%),
-        linear-gradient(160deg, var(--bg), var(--bg-accent));
+        linear-gradient(160deg, var(--bg), var(--bg-alt) 52%, #09090b),
+        radial-gradient(circle at top left, rgba(34, 211, 238, 0.08), transparent 28%);
 }
 
 .default-app {
     min-height: 100vh;
     display: grid;
-    grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
-    gap: 24px;
+    grid-template-columns: minmax(0, 1.45fr) minmax(240px, 0.7fr);
+    gap: 22px;
     padding: 32px;
     align-items: center;
 }
@@ -120,14 +120,12 @@ body {
 .default-panel {
     border: 1px solid var(--panel-border);
     background: var(--panel);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
-    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+    box-shadow: 0 26px 72px rgba(0, 0, 0, 0.34);
 }
 
 .default-hero {
-    border-radius: 32px;
-    padding: 40px;
+    padding: 42px;
+    border-radius: 28px;
     position: relative;
     overflow: hidden;
 }
@@ -135,11 +133,11 @@ body {
 .default-hero::after {
     content: "";
     position: absolute;
-    inset: auto -15% -35% auto;
-    width: 260px;
-    height: 260px;
+    inset: auto -8% -18% auto;
+    width: 320px;
+    height: 320px;
     border-radius: 50%;
-    background: radial-gradient(circle, rgba(34, 211, 238, 0.22), transparent 70%);
+    background: radial-gradient(circle, rgba(34, 211, 238, 0.12), transparent 70%);
     pointer-events: none;
 }
 
@@ -151,85 +149,88 @@ body {
     letter-spacing: 0.14em;
     text-transform: uppercase;
     color: #0f172a;
-    background: linear-gradient(135deg, #67e8f9, #a78bfa);
+    background: linear-gradient(135deg, #67e8f9, #fbbf24);
 }
 
 .default-hero h1 {
     margin: 18px 0 14px;
-    font-size: clamp(2.6rem, 5vw, 5rem);
+    font-size: clamp(2.7rem, 5.2vw, 5.2rem);
     line-height: 0.95;
-    letter-spacing: -0.05em;
-    max-width: 11ch;
+    letter-spacing: -0.055em;
+    max-width: 12ch;
 }
 
 .default-hero p {
     margin: 0;
-    max-width: 56ch;
+    max-width: 58ch;
     color: var(--muted);
-    font-size: 1.05rem;
-    line-height: 1.65;
+    font-size: 1.08rem;
+    line-height: 1.7;
 }
 
 .hero-actions {
     display: flex;
     align-items: center;
     gap: 14px;
-    margin-top: 28px;
+    margin-top: 30px;
     flex-wrap: wrap;
 }
 
 .primary-btn {
     border: 0;
-    border-radius: 999px;
-    padding: 14px 20px;
-    background: linear-gradient(135deg, #22d3ee, #8b5cf6);
-    color: #fff;
-    font: 700 0.98rem/1 Inter, system-ui, sans-serif;
+    border-radius: 12px;
+    padding: 14px 18px;
+    background: linear-gradient(135deg, #22d3ee, #0ea5e9);
+    color: #04111d;
+    font: 800 0.98rem/1 Inter, system-ui, sans-serif;
     cursor: pointer;
-    box-shadow: 0 18px 40px rgba(34, 211, 238, 0.24);
+    box-shadow: 0 16px 34px rgba(14, 165, 233, 0.22);
 }
 
 .status-pill {
     padding: 10px 14px;
     border-radius: 999px;
     color: #cbd5e1;
-    background: rgba(148, 163, 184, 0.12);
-    border: 1px solid rgba(148, 163, 184, 0.16);
+    background: rgba(148, 163, 184, 0.08);
+    border: 1px solid rgba(148, 163, 184, 0.14);
 }
 
 .default-panel {
-    border-radius: 28px;
-    padding: 20px;
+    border-radius: 24px;
+    padding: 18px;
     display: grid;
-    gap: 14px;
+    gap: 12px;
 }
 
 .metric {
-    border-radius: 22px;
-    padding: 20px;
-    background: rgba(15, 23, 42, 0.68);
-    border: 1px solid rgba(148, 163, 184, 0.14);
+    border-radius: 18px;
+    padding: 18px;
+    background: #111827;
+    border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.metric span {
+    display: block;
+    color: var(--muted);
+    font-size: 0.88rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 8px;
 }
 
 .metric strong {
     display: block;
     font-size: 2rem;
     line-height: 1;
-    margin-bottom: 6px;
-}
-
-.metric span {
-    color: var(--muted);
-    font-size: 0.98rem;
 }`,
         js: `const cta = document.getElementById('primary-cta');
-const metrics = Array.from(document.querySelectorAll('.metric strong'));
+const state = document.getElementById('default-state');
 let clicks = 0;
 
 cta.addEventListener('click', () => {
     clicks += 1;
-    cta.textContent = clicks === 1 ? 'Started' : 'Started ' + clicks + ' times';
-    metrics[1].textContent = String(Math.min(99, clicks * 2 || 1));
+    state.textContent = clicks === 1 ? 'Opened' : 'Opened ' + clicks + ' times';
+    cta.textContent = clicks === 1 ? 'Keep going' : 'Ship the concept';
 });
 `
     },
