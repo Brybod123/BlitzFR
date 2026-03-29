@@ -189,10 +189,26 @@
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
         const db = getDatabase(app);
+        const userCache = new Map();
+
+        async function getUserProfile(uid) {
+            if (!uid) return null;
+            if (userCache.has(uid)) return userCache.get(uid);
+            try {
+                const snap = await get(ref(db, 'users/' + uid));
+                const user = snap.exists() ? snap.val() : null;
+                userCache.set(uid, user);
+                return user;
+            } catch (error) {
+                console.error('Failed to load user profile', uid, error);
+                userCache.set(uid, null);
+                return null;
+            }
+        }
 
         // Load community projects from RTDB in real-time
         const projectsRef = ref(db, 'projects');
-        onValue(projectsRef, (snapshot) => {
+        onValue(projectsRef, async (snapshot) => {
             const grid = document.querySelector('.project-grid');
             const createCard = grid.querySelector('.create-new-card');
             grid.innerHTML = '';
@@ -203,6 +219,9 @@
 
             const projects = Object.entries(data).map(([id, p]) => ({ id, ...p }));
             projects.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+
+            const owners = [...new Set(projects.map(project => project.ownerUid).filter(Boolean))];
+            await Promise.all(owners.map(getUserProfile));
 
             projects.forEach(project => {
                 const card = document.createElement('div');
@@ -229,13 +248,29 @@
                 const timeAgo = getTimeAgo(project.updatedAt);
                 const safeName = document.createElement('span');
                 safeName.textContent = project.name || 'Untitled Project';
-                info.innerHTML = '<h3>' + safeName.textContent + '</h3><p>Updated ' + timeAgo + '</p>';
+                const creator = project.ownerUid ? userCache.get(project.ownerUid) : null;
+                const creatorName = creator?.displayName || creator?.email || 'Unknown creator';
+                const creatorLine = project.ownerUid
+                    ? '<a class="project-owner-link" onclick="event.stopPropagation()" href="profile.html?user=' + encodeURIComponent(project.ownerUid) + '">by ' + escapeHtml(creatorName) + '</a>'
+                    : '<span class="project-owner-muted">by Unknown creator</span>';
+                info.innerHTML = '<h3>' + safeName.textContent + '</h3>' +
+                    '<p>Updated ' + timeAgo + '</p>' +
+                    '<p class="project-source-line">' + creatorLine + '</p>';
 
                 card.appendChild(preview);
                 card.appendChild(info);
                 grid.appendChild(card);
             });
         });
+
+        function escapeHtml(value) {
+            return String(value)
+                .replaceAll('&', '&amp;')
+                .replaceAll('<', '&lt;')
+                .replaceAll('>', '&gt;')
+                .replaceAll('"', '&quot;')
+                .replaceAll("'", '&#39;');
+        }
 
         function getTimeAgo(ts) {
             if (!ts) return 'recently';

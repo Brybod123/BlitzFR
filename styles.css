@@ -1428,6 +1428,26 @@ body.editor-page {
     color: #475569;
 }
 
+.project-source-line {
+    margin-top: 4px;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    color: #7dd3fc;
+}
+
+.project-owner-link {
+    color: #7dd3fc;
+    text-decoration: none;
+}
+
+.project-owner-link:hover {
+    text-decoration: underline;
+}
+
+.project-owner-muted {
+    color: #64748b;
+}
+
 .create-new-card {
     border: 2px dashed #0088ff;
     background: transparent;
@@ -1481,4 +1501,47 @@ body.editor-page {
     font-family: 'VT323', monospace;
     font-size: 18px;
     color: #475569;
+}
+
+/* ===== PROFILE PAGE ===== */
+.profile-hero {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 0 28px;
+}
+
+.profile-avatar-wrap {
+    width: 72px;
+    height: 72px;
+    overflow: hidden;
+    border-radius: 18px;
+    border: 2px solid #30363d;
+    background: #111827;
+    flex: 0 0 auto;
+}
+
+.profile-hero h2 {
+    margin: 0 0 6px 0;
+    font-family: 'Jersey 10', sans-serif;
+    font-size: 2.6rem;
+    color: #ffffff;
+    letter-spacing: 0.5px;
+}
+
+.profile-hero p {
+    margin: 0;
+    font-family: 'VT323', monospace;
+    font-size: 1.4rem;
+    color: #7dd3fc;
+}
+
+.profile-page .project-grid,
+body.profile-page .project-grid {
+    margin-top: 16px;
+}
+
+.profile-page .project-card,
+body.profile-page .project-card {
+    cursor: pointer;
 }
