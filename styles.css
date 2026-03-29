@@ -264,6 +264,10 @@ body.editor-page {
     z-index: 50;
 }
 
+.header-right .account-menu {
+    margin-left: 2px;
+}
+
 .account-panel-head {
     padding-bottom: 12px;
     border-bottom: 1px solid #1f2937;
@@ -1614,4 +1618,125 @@ body.profile-page .project-grid {
 .profile-page .project-card,
 body.profile-page .project-card {
     cursor: pointer;
+}
+
+.dashboard-hero {
+    margin-bottom: 24px;
+}
+
+.dashboard-stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+.dashboard-stat-card,
+.dashboard-panel {
+    background: #0a0c10;
+    border: 2px solid #30363d;
+    padding: 18px;
+}
+
+.dashboard-stat-label {
+    display: block;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    color: #7dd3fc;
+    margin-bottom: 8px;
+}
+
+.dashboard-stat-card strong {
+    font-family: 'Jersey 10', sans-serif;
+    font-size: 2rem;
+    color: #ffffff;
+    font-weight: 400;
+}
+
+.dashboard-panels {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.dashboard-panel h3 {
+    margin: 0 0 14px 0;
+    font-family: 'Jersey 10', sans-serif;
+    font-size: 2rem;
+    color: #ffffff;
+    font-weight: 400;
+}
+
+.dashboard-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.dashboard-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    border: 1px solid #30363d;
+    background: #111827;
+    color: #dbeafe;
+    text-decoration: none;
+}
+
+.dashboard-list-item strong {
+    display: block;
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    font-weight: 400;
+    color: #ffffff;
+}
+
+.dashboard-list-item span {
+    font-family: 'VT323', monospace;
+    font-size: 17px;
+    color: #94a3b8;
+}
+
+.dashboard-empty {
+    padding: 16px;
+    border: 1px dashed #30363d;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    color: #64748b;
+}
+
+.dashboard-follower-item {
+    justify-content: flex-start;
+}
+
+.dashboard-follower-main {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.dashboard-follower-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 999px;
+    object-fit: cover;
+    display: block;
+    background: #0f172a;
+}
+
+.dashboard-follower-avatar-fallback {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    color: #dbeafe;
+}
+
+@media (max-width: 900px) {
+    .dashboard-panels {
+        grid-template-columns: 1fr;
+    }
 }

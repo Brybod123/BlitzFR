@@ -41,6 +41,37 @@
             </div>
             <button class="icon-btn" id="btn-credits-about" title="About Credits">?</button>
             <button class="icon-btn" id="btn-help" title="Mission">!</button>
+            <div class="account-menu">
+                <button class="account-trigger" id="home-account-trigger" title="Account Menu">
+                    <img id="home-account-avatar" class="account-avatar hidden" alt="Profile">
+                    <span id="home-account-avatar-fallback" class="account-avatar-fallback">?</span>
+                </button>
+                <div class="account-panel hidden" id="home-account-panel">
+                    <div class="account-panel-head">
+                        <div class="account-id-row">
+                            <img id="home-account-panel-avatar" class="account-avatar hidden" alt="Profile">
+                            <span id="home-account-panel-fallback" class="account-avatar-fallback account-avatar-fallback-lg">?</span>
+                            <div>
+                                <div class="account-name" id="home-account-name">Guest</div>
+                                <div class="account-email" id="home-account-email">Not signed in</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="account-stat-grid">
+                        <div class="account-stat-card">
+                            <span class="account-stat-label">Projects</span>
+                            <strong id="home-account-projects">0</strong>
+                        </div>
+                        <div class="account-stat-card">
+                            <span class="account-stat-label">Followers</span>
+                            <strong id="home-account-followers">0</strong>
+                        </div>
+                    </div>
+                    <a class="account-action-btn hidden" id="home-dashboard-link" href="dashboard.html">Dashboard</a>
+                    <button class="account-action-btn" id="home-sign-in">Sign In</button>
+                    <button class="account-action-btn hidden" id="home-sign-out">Sign Out</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -142,6 +173,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
         import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-analytics.js";
+        import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
         import { getDatabase, ref, onValue, get } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
         const firebaseConfig = {
@@ -157,6 +189,8 @@
 
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const googleProvider = new GoogleAuthProvider();
         const db = getDatabase(app);
         const userCache = new Map();
         const searchInput = document.getElementById('project-search');
@@ -165,8 +199,22 @@
         const createCard = grid.querySelector('.create-new-card');
         const gridToggle = document.getElementById('view-grid');
         const lineToggle = document.getElementById('view-line');
+        const homeAccountTrigger = document.getElementById('home-account-trigger');
+        const homeAccountPanel = document.getElementById('home-account-panel');
+        const homeAccountAvatar = document.getElementById('home-account-avatar');
+        const homeAccountAvatarFallback = document.getElementById('home-account-avatar-fallback');
+        const homeAccountPanelAvatar = document.getElementById('home-account-panel-avatar');
+        const homeAccountPanelFallback = document.getElementById('home-account-panel-fallback');
+        const homeAccountName = document.getElementById('home-account-name');
+        const homeAccountEmail = document.getElementById('home-account-email');
+        const homeAccountProjects = document.getElementById('home-account-projects');
+        const homeAccountFollowers = document.getElementById('home-account-followers');
+        const homeDashboardLink = document.getElementById('home-dashboard-link');
+        const homeSignIn = document.getElementById('home-sign-in');
+        const homeSignOut = document.getElementById('home-sign-out');
         let allProjects = [];
         let currentViewMode = 'grid';
+        let currentUser = null;
 
         async function getUserProfile(uid) {
             if (!uid) return null;
@@ -181,6 +229,52 @@
                 userCache.set(uid, null);
                 return null;
             }
+        }
+
+        function setAvatar(targetImg, targetFallback, user) {
+            const label = (user?.displayName || user?.email || 'Guest').trim();
+            const initial = label.charAt(0).toUpperCase() || '?';
+            if (user?.photoURL) {
+                targetImg.src = user.photoURL;
+                targetImg.classList.remove('hidden');
+                targetFallback.classList.add('hidden');
+            } else {
+                targetImg.classList.add('hidden');
+                targetFallback.textContent = initial;
+                targetFallback.classList.remove('hidden');
+            }
+        }
+
+        async function loadHomeAccountStats(user) {
+            if (!user) {
+                homeAccountProjects.textContent = '0';
+                homeAccountFollowers.textContent = '0';
+                return;
+            }
+
+            const [projectsSnapshot, followersSnapshot] = await Promise.all([
+                get(ref(db, 'projects')),
+                get(ref(db, 'followers/' + user.uid))
+            ]);
+
+            const projectCount = projectsSnapshot.exists()
+                ? Object.values(projectsSnapshot.val()).filter(project => project && project.ownerUid === user.uid).length
+                : 0;
+            const followerCount = followersSnapshot.exists() ? Object.keys(followersSnapshot.val()).length : 0;
+            homeAccountProjects.textContent = String(projectCount);
+            homeAccountFollowers.textContent = String(followerCount);
+        }
+
+        async function renderHomeAccount(user) {
+            currentUser = user;
+            homeAccountName.textContent = user?.displayName || 'Guest';
+            homeAccountEmail.textContent = user?.email || 'Not signed in';
+            homeDashboardLink.classList.toggle('hidden', !user);
+            homeSignIn.classList.toggle('hidden', !!user);
+            homeSignOut.classList.toggle('hidden', !user);
+            setAvatar(homeAccountAvatar, homeAccountAvatarFallback, user);
+            setAvatar(homeAccountPanelAvatar, homeAccountPanelFallback, user);
+            await loadHomeAccountStats(user);
         }
 
         function sortProjects(projects, sortMode) {
@@ -269,6 +363,26 @@
         sortSelect.addEventListener('change', renderProjects);
         gridToggle.addEventListener('click', () => setViewMode('grid'));
         lineToggle.addEventListener('click', () => setViewMode('line'));
+        homeAccountTrigger.addEventListener('click', (event) => {
+            event.stopPropagation();
+            homeAccountPanel.classList.toggle('hidden');
+        });
+        document.addEventListener('click', (event) => {
+            if (!homeAccountPanel.contains(event.target) && !homeAccountTrigger.contains(event.target)) {
+                homeAccountPanel.classList.add('hidden');
+            }
+        });
+        homeSignIn.addEventListener('click', async () => {
+            await signInWithPopup(auth, googleProvider);
+            homeAccountPanel.classList.add('hidden');
+        });
+        homeSignOut.addEventListener('click', async () => {
+            await signOut(auth);
+            homeAccountPanel.classList.add('hidden');
+        });
+        onAuthStateChanged(auth, async (user) => {
+            await renderHomeAccount(user);
+        });
 
         // Load community projects from RTDB in real-time
         const projectsRef = ref(db, 'projects');

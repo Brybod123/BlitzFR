@@ -646,6 +646,7 @@ async function runChatLoop(bubble, turn = 1) {
         chatMessages.push({ role: 'assistant', content: aiContent });
         updateCredits();
         updateModelStats(); // Market refresh
+        await recordUsageEvent(currentModelId);
 
         // Parse and Execute Tools
         const needsReply = executeAiTools(aiContent);
@@ -663,6 +664,27 @@ async function runChatLoop(bubble, turn = 1) {
     } catch (err) {
         console.error(err);
         bubble.textContent = "Connection error.";
+    }
+}
+
+async function recordUsageEvent(modelId) {
+    if (!currentUser || !window.firebaseReady || !window.firebasePush || !window.firebaseSet || !window.firebaseRef || !window.firebaseDB) {
+        return;
+    }
+
+    try {
+        const pricePerToken = parseFloat(modelPrices[modelId]) || 0.000005;
+        const cost = avgTokens * pricePerToken;
+        const usageRef = window.firebaseRef(window.firebaseDB, `users/${currentUser.uid}/usageEvents`);
+        const newRef = window.firebasePush(usageRef);
+        await window.firebaseSet(newRef, {
+            modelId,
+            cost,
+            tokens: avgTokens,
+            createdAt: Date.now()
+        });
+    } catch (error) {
+        console.error('Failed to record usage event', error);
     }
 }
 

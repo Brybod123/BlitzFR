@@ -83,6 +83,7 @@
                                     <input class="account-input" id="account-photo-url-input" type="url" placeholder="Profile photo URL">
                                     <button class="account-action-btn hidden" id="account-save-profile">Save Profile</button>
                                 </div>
+                                <a class="account-action-btn hidden" id="account-dashboard-link" href="dashboard.html">Dashboard</a>
                                 <button class="account-action-btn hidden" id="account-sign-out">Sign Out</button>
                             </div>
                         </div>
@@ -243,6 +244,7 @@
         const displayNameInput = document.getElementById('account-display-name-input');
         const photoUrlInput = document.getElementById('account-photo-url-input');
         const saveProfileBtn = document.getElementById('account-save-profile');
+        const dashboardLink = document.getElementById('account-dashboard-link');
         const signOutBtn = document.getElementById('account-sign-out');
 
         function normalizeUserProfile(data = {}) {
@@ -382,6 +384,7 @@
             displayNameInput.value = user?.displayName || '';
             photoUrlInput.value = user?.photoURL || '';
             saveProfileBtn.classList.toggle('hidden', !user);
+            dashboardLink.classList.toggle('hidden', !user);
             signOutBtn.classList.toggle('hidden', !user);
             setAvatar(avatar, avatarFallback, user);
             setAvatar(panelAvatar, panelFallback, user);
