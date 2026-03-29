@@ -214,6 +214,7 @@
         const sortSelect = document.getElementById('project-sort');
         const grid = document.getElementById('project-grid');
         const createCard = grid.querySelector('.create-new-card');
+        const templateCard = grid.querySelector('.template-new-card');
         const gridToggle = document.getElementById('view-grid');
         const lineToggle = document.getElementById('view-line');
         const homeAccountTrigger = document.getElementById('home-account-trigger');
@@ -337,6 +338,7 @@
         function renderProjects() {
             grid.innerHTML = '';
             if (createCard) grid.appendChild(createCard);
+            if (templateCard) grid.appendChild(templateCard);
             grid.classList.toggle('project-list', currentViewMode === 'line');
 
             const visibleProjects = sortProjects(filterProjects(allProjects, searchInput.value), sortSelect.value);
