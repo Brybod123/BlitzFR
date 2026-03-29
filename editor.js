@@ -29,14 +29,19 @@ You can use multiple tags in one response. Always explain what you are doing.`
     }
 ];
 
-// Define initial contents
-const initialHtml = `<div class="main-container">
+const starterTemplates = {
+    blank: {
+        html: '',
+        css: '',
+        js: ''
+    },
+    default: {
+        html: `<div class="main-container">
     <h1 class="heading">My First Blitz Website</h1>
     <p class="description">This site was built using HTML, CSS, and JS. Try editing the code on the right!</p>
     <button id="interaction-btn" class="btn">Click Me!</button>
-</div>`;
-
-const initialCss = `.main-container {
+</div>`,
+        css: `.main-container {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -70,14 +75,143 @@ const initialCss = `.main-container {
 
 .btn:hover {
     background: #00aaff;
-}`;
-
-const initialJs = `const btn = document.getElementById('interaction-btn');
+}`,
+        js: `const btn = document.getElementById('interaction-btn');
 btn.addEventListener('click', () => {
     console.log("Button clicked!");
     btn.textContent = "You clicked it!";
     btn.style.background = "#00ff00";
-});`;
+});`
+    },
+    'liquid-glass': {
+        html: `<div class="glass-shell">
+    <div class="glass-card">
+        <h1>Liquid Glass</h1>
+        <p>Layer frosted panels, soft shadows, and blur effects.</p>
+    </div>
+</div>`,
+        css: `body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: radial-gradient(circle at top, #1e293b, #020617 70%);
+    color: white;
+    font-family: sans-serif;
+}
+
+.glass-shell {
+    padding: 32px;
+}
+
+.glass-card {
+    padding: 32px 36px;
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+}`,
+        js: `console.log('Liquid Glass starter loaded');`
+    },
+    platformer: {
+        html: `<div class="game">
+    <div class="player" id="player"></div>
+    <div class="ground"></div>
+</div>`,
+        css: `body {
+    margin: 0;
+    overflow: hidden;
+    background: linear-gradient(#87ceeb, #dff3ff);
+}
+
+.game {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+}
+
+.player {
+    position: absolute;
+    left: 80px;
+    bottom: 80px;
+    width: 42px;
+    height: 42px;
+    background: #ef4444;
+    border-radius: 10px;
+}
+
+.ground {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 80px;
+    background: #22c55e;
+}`,
+        js: `const player = document.getElementById('player');
+let x = 80;
+let y = 80;
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') x -= 10;
+    if (e.key === 'ArrowRight') x += 10;
+    if (e.key === 'ArrowUp') y += 10;
+    if (e.key === 'ArrowDown') y -= 10;
+    player.style.left = x + 'px';
+    player.style.bottom = y + 'px';
+});`
+    },
+    clicker: {
+        html: `<div class="clicker-wrap">
+    <h1>Clicker Game</h1>
+    <button id="click-btn">Click</button>
+    <p>Score: <span id="score">0</span></p>
+</div>`,
+        css: `body {
+    margin: 0;
+    min-height: 100vh;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, #111827, #1f2937);
+    color: white;
+    font-family: sans-serif;
+}
+
+.clicker-wrap {
+    text-align: center;
+    padding: 32px;
+    border-radius: 24px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+#click-btn {
+    padding: 14px 24px;
+    border: 0;
+    border-radius: 14px;
+    background: #a855f7;
+    color: white;
+    font-size: 1.1rem;
+    cursor: pointer;
+}`,
+        js: `let score = 0;
+const scoreEl = document.getElementById('score');
+document.getElementById('click-btn').addEventListener('click', () => {
+    score += 1;
+    scoreEl.textContent = score;
+});`
+    }
+};
+
+function createInitialFiles(templateKey = 'default') {
+    const template = starterTemplates[templateKey] || starterTemplates.default;
+    return {
+        'index.html': { model: monaco.editor.createModel(template.html, "html", monaco.Uri.file("index.html")), lang: 'html' },
+        'styles.css': { model: monaco.editor.createModel(template.css, "css", monaco.Uri.file("styles.css")), lang: 'css' },
+        'script.js': { model: monaco.editor.createModel(template.js, "javascript", monaco.Uri.file("script.js")), lang: 'javascript' }
+    };
+}
 
 // Intercept window.open explicitly for Monaco's link clicker
 const originalWindowOpen = window.open;
@@ -94,12 +228,11 @@ window.open = function(url, ...args) {
     return originalWindowOpen.call(window, url, ...args);
 };
 
+const urlParams = new URLSearchParams(window.location.search);
+const templateId = urlParams.get('template') || 'default';
+
 // Setup Monaco Models (Virtual File System)
-let files = {
-    'index.html': { model: monaco.editor.createModel(initialHtml, "html", monaco.Uri.file("index.html")), lang: 'html' },
-    'styles.css': { model: monaco.editor.createModel(initialCss, "css", monaco.Uri.file("styles.css")), lang: 'css' },
-    'script.js': { model: monaco.editor.createModel(initialJs, "javascript", monaco.Uri.file("script.js")), lang: 'javascript' }
-};
+let files = createInitialFiles(templateId);
 
 let activeFile = 'index.html';
 let currentUser = window.firebaseUser || null;
@@ -1580,7 +1713,6 @@ async function loadProject(projectId) {
 document.querySelector('.save-btn').addEventListener('click', saveProject);
 
 // Check URL for ?project=ID on page load
-const urlParams = new URLSearchParams(window.location.search);
 const loadId = urlParams.get('project');
 const forkId = urlParams.get('forkOf');
 const sourceId = forkId || loadId;

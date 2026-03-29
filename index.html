@@ -122,7 +122,7 @@
                 <h3>Create New Project</h3>
                 <p>Start a blank app</p>
             </div>
-            <div class="project-card create-new-card template-new-card" onclick="window.location.href='editor.html?template=default'">
+            <div class="project-card create-new-card template-new-card" id="template-card">
                 <div class="create-icon">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <path d="M4 4h16v16H4z"></path>
@@ -162,6 +162,24 @@
         </div>
     </div>
 
+    <div class="modal-overlay hidden" id="template-modal">
+        <div class="modal template-modal">
+            <div class="modal-header">
+                <h3>NEW PROJECT FROM TEMPLATE</h3>
+                <button class="modal-close" id="btn-close-template-modal">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="template-choice-list">
+                    <button type="button" class="template-choice-btn" data-template="blank">Create Blank</button>
+                    <button type="button" class="template-choice-btn" data-template="default">Defualt</button>
+                    <button type="button" class="template-choice-btn" data-template="liquid-glass">Liquid Glass</button>
+                    <button type="button" class="template-choice-btn" data-template="platformer">Platformer</button>
+                    <button type="button" class="template-choice-btn" data-template="clicker">Clicker Game</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <script src="button.js"></script>
     <script>
         // Fetch and render credits on homepage
@@ -184,8 +202,21 @@
         updateCredits();
 
         const creditsModal = document.getElementById('credits-modal');
+        const templateModal = document.getElementById('template-modal');
+        const templateCard = document.getElementById('template-card');
         document.getElementById('btn-credits-about').addEventListener('click', () => creditsModal.classList.remove('hidden'));
         document.getElementById('btn-close-credits').addEventListener('click', () => creditsModal.classList.add('hidden'));
+        document.getElementById('btn-close-template-modal').addEventListener('click', () => templateModal.classList.add('hidden'));
+        templateCard.addEventListener('click', () => templateModal.classList.remove('hidden'));
+        templateModal.querySelectorAll('.template-choice-btn').forEach((btn) => {
+            btn.addEventListener('click', () => {
+                const template = btn.dataset.template || 'default';
+                window.location.href = `editor.html?template=${encodeURIComponent(template)}`;
+            });
+        });
+        templateModal.addEventListener('click', (event) => {
+            if (event.target === templateModal) templateModal.classList.add('hidden');
+        });
     </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";

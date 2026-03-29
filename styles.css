@@ -1745,6 +1745,33 @@ body.editor-page {
     color: #c4b5fd;
 }
 
+.template-modal {
+    max-width: 420px;
+}
+
+.template-choice-list {
+    display: grid;
+    gap: 10px;
+}
+
+.template-choice-btn {
+    width: 100%;
+    padding: 14px 16px;
+    border: 1px solid rgba(192, 132, 252, 0.32);
+    background: rgba(139, 92, 246, 0.14);
+    color: #ffffff;
+    font-family: 'Jersey 10', sans-serif;
+    font-size: 1.15rem;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 12px;
+}
+
+.template-choice-btn:hover {
+    background: rgba(168, 85, 247, 0.24);
+    border-color: #d8b4fe;
+}
+
 /* ===== PROFILE PAGE ===== */
 .profile-hero {
     display: flex;
