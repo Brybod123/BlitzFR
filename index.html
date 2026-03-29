@@ -23,7 +23,7 @@
         </div>
 
         <div class="header-center">
-            <input type="text" class="search-bar" placeholder="Search projects or community... (Placeholder)">
+            <input type="text" id="project-search" class="search-bar" placeholder="Search projects or creators...">
         </div>
 
         <div class="header-right">
@@ -48,19 +48,20 @@
         <div class="dashboard-toolbar">
             <h2>Recent Projects <span>(Preparing for Community)</span></h2>
             <div class="toolbar-actions">
-                <select class="dashboard-select" disabled>
-                    <option>Sort by: Recent</option>
-                    <option>Sort by: Name</option>
+                <select class="dashboard-select" id="project-sort">
+                    <option value="recent">Sort by: Recent</option>
+                    <option value="name">Sort by: Name</option>
+                    <option value="views">Sort by: Views</option>
                 </select>
                 <div class="view-toggles">
-                    <button class="icon-btn active"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    <button class="icon-btn active" id="view-grid" type="button" title="Grid view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2">
                             <rect x="3" y="3" width="7" height="7"></rect>
                             <rect x="14" y="3" width="7" height="7"></rect>
                             <rect x="14" y="14" width="7" height="7"></rect>
                             <rect x="3" y="14" width="7" height="7"></rect>
                         </svg></button>
-                    <button class="icon-btn" disabled><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+                    <button class="icon-btn" id="view-line" type="button" title="Line view"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" stroke-width="2">
                             <line x1="8" y1="6" x2="21" y2="6"></line>
                             <line x1="8" y1="12" x2="21" y2="12"></line>
@@ -73,7 +74,7 @@
             </div>
         </div>
 
-        <div class="project-grid">
+        <div class="project-grid" id="project-grid">
             <div class="project-card create-new-card" onclick="window.location.href='editor.html'">
                 <div class="create-icon">
                     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -83,38 +84,6 @@
                 </div>
                 <h3>Create New Project</h3>
                 <p>Start a blank app</p>
-            </div>
-
-            <div class="project-card">
-                <div class="project-preview skeleton"></div>
-                <div class="project-info">
-                    <h3>Portfolio Website Template</h3>
-                    <p>Updated 2 hours ago</p>
-                </div>
-            </div>
-
-            <div class="project-card">
-                <div class="project-preview skeleton"></div>
-                <div class="project-info">
-                    <h3>SaaS Dashboard Layout</h3>
-                    <p>Updated yesterday</p>
-                </div>
-            </div>
-
-            <div class="project-card">
-                <div class="project-preview skeleton"></div>
-                <div class="project-info">
-                    <h3>Coffee Shop Landing Page</h3>
-                    <p>Updated 3 days ago</p>
-                </div>
-            </div>
-
-            <div class="project-card">
-                <div class="project-preview skeleton"></div>
-                <div class="project-info">
-                    <h3>API Documentation Demo</h3>
-                    <p>Updated last week</p>
-                </div>
             </div>
         </div>
     </main>
@@ -190,6 +159,14 @@
         const analytics = getAnalytics(app);
         const db = getDatabase(app);
         const userCache = new Map();
+        const searchInput = document.getElementById('project-search');
+        const sortSelect = document.getElementById('project-sort');
+        const grid = document.getElementById('project-grid');
+        const createCard = grid.querySelector('.create-new-card');
+        const gridToggle = document.getElementById('view-grid');
+        const lineToggle = document.getElementById('view-line');
+        let allProjects = [];
+        let currentViewMode = 'grid';
 
         async function getUserProfile(uid) {
             if (!uid) return null;
@@ -206,24 +183,40 @@
             }
         }
 
-        // Load community projects from RTDB in real-time
-        const projectsRef = ref(db, 'projects');
-        onValue(projectsRef, async (snapshot) => {
-            const grid = document.querySelector('.project-grid');
-            const createCard = grid.querySelector('.create-new-card');
+        function sortProjects(projects, sortMode) {
+            const sorted = [...projects];
+            if (sortMode === 'name') {
+                sorted.sort((a, b) => (a.name || 'Untitled Project').localeCompare(b.name || 'Untitled Project'));
+            } else if (sortMode === 'views') {
+                sorted.sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0) || (b.updatedAt || 0) - (a.updatedAt || 0));
+            } else {
+                sorted.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+            }
+            return sorted;
+        }
+
+        function filterProjects(projects, query) {
+            const needle = query.trim().toLowerCase();
+            if (!needle) return projects;
+            return projects.filter((project) => {
+                const creator = project.ownerUid ? userCache.get(project.ownerUid) : null;
+                const creatorName = creator?.displayName || creator?.email || project.ownerDisplayName || shortUid(project.ownerUid);
+                const haystack = [
+                    project.name || '',
+                    project.hostedSlug || '',
+                    creatorName || ''
+                ].join(' ').toLowerCase();
+                return haystack.includes(needle);
+            });
+        }
+
+        function renderProjects() {
             grid.innerHTML = '';
             if (createCard) grid.appendChild(createCard);
+            grid.classList.toggle('project-list', currentViewMode === 'line');
 
-            const data = snapshot.val();
-            if (!data) return;
-
-            const projects = Object.entries(data).map(([id, p]) => ({ id, ...p }));
-            projects.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
-
-            const owners = [...new Set(projects.map(project => project.ownerUid).filter(Boolean))];
-            await Promise.all(owners.map(getUserProfile));
-
-            projects.forEach(project => {
+            const visibleProjects = sortProjects(filterProjects(allProjects, searchInput.value), sortSelect.value);
+            visibleProjects.forEach(project => {
                 const card = document.createElement('div');
                 card.className = 'project-card';
                 card.onclick = () => window.location.href = project.hostedWebsite
@@ -263,6 +256,35 @@
                 card.appendChild(info);
                 grid.appendChild(card);
             });
+        }
+
+        function setViewMode(nextMode) {
+            currentViewMode = nextMode === 'line' ? 'line' : 'grid';
+            gridToggle.classList.toggle('active', currentViewMode === 'grid');
+            lineToggle.classList.toggle('active', currentViewMode === 'line');
+            renderProjects();
+        }
+
+        searchInput.addEventListener('input', renderProjects);
+        sortSelect.addEventListener('change', renderProjects);
+        gridToggle.addEventListener('click', () => setViewMode('grid'));
+        lineToggle.addEventListener('click', () => setViewMode('line'));
+
+        // Load community projects from RTDB in real-time
+        const projectsRef = ref(db, 'projects');
+        onValue(projectsRef, async (snapshot) => {
+            const data = snapshot.val();
+            if (!data) {
+                allProjects = [];
+                renderProjects();
+                return;
+            }
+
+            allProjects = Object.entries(data).map(([id, p]) => ({ id, ...p }));
+
+            const owners = [...new Set(allProjects.map(project => project.ownerUid).filter(Boolean))];
+            await Promise.all(owners.map(getUserProfile));
+            renderProjects();
         });
 
         function escapeHtml(value) {

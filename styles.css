@@ -1351,8 +1351,12 @@ body.editor-page {
     font-size: 18px;
     outline: none;
     appearance: none;
-    cursor: not-allowed;
-    opacity: 0.5;
+    cursor: pointer;
+    opacity: 1;
+}
+
+.dashboard-select:focus {
+    border-color: #0088ff;
 }
 
 .view-toggles {
@@ -1363,10 +1367,47 @@ body.editor-page {
     border: 2px solid #30363d;
 }
 
+.view-toggles .icon-btn.active {
+    background: #0088ff;
+    color: #ffffff;
+    border-color: #0088ff;
+}
+
 .project-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 24px;
+}
+
+.project-grid.project-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.project-grid.project-list .project-card {
+    flex-direction: row;
+    align-items: stretch;
+    min-height: 150px;
+}
+
+.project-grid.project-list .project-preview {
+    width: 240px;
+    min-width: 240px;
+    height: auto;
+    border-bottom: 0;
+    border-right: 2px solid #30363d;
+}
+
+.project-grid.project-list .project-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.project-grid.project-list .create-new-card {
+    min-height: 180px;
 }
 
 .project-card {
