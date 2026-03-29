@@ -63,13 +63,19 @@
                             <strong id="home-account-projects">0</strong>
                         </div>
                         <div class="account-stat-card">
+                            <span class="account-stat-label">Remaining Credits</span>
+                            <strong id="home-account-remaining">3000</strong>
+                        </div>
+                        <div class="account-stat-card">
                             <span class="account-stat-label">Followers</span>
                             <strong id="home-account-followers">0</strong>
                         </div>
                     </div>
-                    <a class="account-action-btn hidden" id="home-dashboard-link" href="dashboard.html">Dashboard</a>
-                    <button class="account-action-btn" id="home-sign-in">Sign In</button>
-                    <button class="account-action-btn hidden" id="home-sign-out">Sign Out</button>
+                    <div class="account-action-stack">
+                        <a class="account-action-btn hidden" id="home-dashboard-link" href="dashboard.html">Dashboard</a>
+                        <button class="account-action-btn" id="home-sign-in">Sign In</button>
+                        <button class="account-action-btn hidden" id="home-sign-out">Sign Out</button>
+                    </div>
                 </div>
             </div>
         </div>
@@ -208,10 +214,13 @@
         const homeAccountName = document.getElementById('home-account-name');
         const homeAccountEmail = document.getElementById('home-account-email');
         const homeAccountProjects = document.getElementById('home-account-projects');
+        const homeAccountRemaining = document.getElementById('home-account-remaining');
         const homeAccountFollowers = document.getElementById('home-account-followers');
         const homeDashboardLink = document.getElementById('home-dashboard-link');
         const homeSignIn = document.getElementById('home-sign-in');
         const homeSignOut = document.getElementById('home-sign-out');
+        const tierBudgets = { basic: 0.03, gold: 0.04, diamond: 0.05 };
+        const creditsPerCent = 1000;
         let allProjects = [];
         let currentViewMode = 'grid';
         let currentUser = null;
@@ -248,20 +257,30 @@
         async function loadHomeAccountStats(user) {
             if (!user) {
                 homeAccountProjects.textContent = '0';
+                homeAccountRemaining.textContent = '3,000';
                 homeAccountFollowers.textContent = '0';
                 return;
             }
 
-            const [projectsSnapshot, followersSnapshot] = await Promise.all([
+            const [userSnapshot, projectsSnapshot, followersSnapshot] = await Promise.all([
+                get(ref(db, 'users/' + user.uid)),
                 get(ref(db, 'projects')),
                 get(ref(db, 'followers/' + user.uid))
             ]);
 
+            const userProfile = userSnapshot.exists() ? userSnapshot.val() : {};
             const projectCount = projectsSnapshot.exists()
                 ? Object.values(projectsSnapshot.val()).filter(project => project && project.ownerUid === user.uid).length
                 : 0;
             const followerCount = followersSnapshot.exists() ? Object.keys(followersSnapshot.val()).length : 0;
+            const tier = typeof userProfile.tier === 'string' ? userProfile.tier.toLowerCase() : 'basic';
+            const hourlyBudget = tierBudgets[tier] || tierBudgets.basic;
+            const hourlyState = JSON.parse(localStorage.getItem('blitz_hourly_limit') || '{}');
+            const isFresh = hourlyState.ts && (Date.now() - hourlyState.ts) <= 3600000;
+            const spent = isFresh ? (Number(hourlyState.spent) || 0) : 0;
+            const remainingCredits = Math.max(0, Math.round((hourlyBudget - spent) * 100 * creditsPerCent));
             homeAccountProjects.textContent = String(projectCount);
+            homeAccountRemaining.textContent = remainingCredits.toLocaleString();
             homeAccountFollowers.textContent = String(followerCount);
         }
 

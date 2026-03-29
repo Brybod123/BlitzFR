@@ -66,6 +66,10 @@
                                         <strong id="account-hourly-budget">3000</strong>
                                     </div>
                                     <div class="account-stat-card">
+                                        <span class="account-stat-label">Remaining Credits</span>
+                                        <strong id="account-hourly-remaining">3000</strong>
+                                    </div>
+                                    <div class="account-stat-card">
                                         <span class="account-stat-label">Used This Hour</span>
                                         <strong id="account-hourly-used">0</strong>
                                     </div>
@@ -83,8 +87,10 @@
                                     <input class="account-input" id="account-photo-url-input" type="url" placeholder="Profile photo URL">
                                     <button class="account-action-btn hidden" id="account-save-profile">Save Profile</button>
                                 </div>
-                                <a class="account-action-btn hidden" id="account-dashboard-link" href="dashboard.html">Dashboard</a>
-                                <button class="account-action-btn hidden" id="account-sign-out">Sign Out</button>
+                                <div class="account-action-stack">
+                                    <a class="account-action-btn hidden" id="account-dashboard-link" href="dashboard.html">Dashboard</a>
+                                    <button class="account-action-btn hidden" id="account-sign-out">Sign Out</button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -240,6 +246,7 @@
         const accountName = document.getElementById('account-name');
         const accountEmail = document.getElementById('account-email');
         const accountBudget = document.getElementById('account-hourly-budget');
+        const accountRemaining = document.getElementById('account-hourly-remaining');
         const accountUsed = document.getElementById('account-hourly-used');
         const displayNameInput = document.getElementById('account-display-name-input');
         const photoUrlInput = document.getElementById('account-photo-url-input');
@@ -315,6 +322,7 @@
                 hourlyBudget,
                 used,
                 hourlyCredits: Math.round(hourlyBudget * 100 * creditsPerCent),
+                remainingCredits: Math.max(0, Math.round((hourlyBudget - used) * 100 * creditsPerCent)),
                 usedCredits: Math.max(0, Math.round(used * 100 * creditsPerCent))
             };
         }
@@ -349,6 +357,7 @@
         function refreshHourlyPanel() {
             const usage = getHourlyUsage();
             accountBudget.textContent = usage.hourlyCredits.toLocaleString();
+            accountRemaining.textContent = usage.remainingCredits.toLocaleString();
             animateUsageCredits(usage.usedCredits);
         }
 
