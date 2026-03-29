@@ -15,9 +15,11 @@
     <div class="editor-container">
         <!-- Left Side: Preview -->
         <div class="preview-side">
-            <button class="preview-restore-btn hidden" id="btn-restore-editor-pane" type="button" title="Bring back editor">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"></rect><path d="M9 4v16"></path><path d="M13 12h5"></path><path d="m15 9 3 3-3 3"></path></svg>
-                <span>Return to Editor</span>
+            <button class="preview-restore-btn" id="btn-restore-editor-pane" type="button" title="Return to editor" aria-label="Return to editor">
+                <span class="preview-restore-icon">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18 9 12l6-6"></path></svg>
+                </span>
+                <span class="preview-restore-label">Back to Editor</span>
             </button>
             <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin"></iframe>
         </div>
@@ -48,8 +50,8 @@
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                             </button>
                         </div>
-                        <button class="panel-toggle-btn" id="btn-toggle-editor-pane" title="Collapse Editor" type="button">
-                            <span class="panel-toggle-icon" aria-hidden="true">
+                        <button class="icon-nav-btn panel-toggle-btn" id="btn-toggle-editor-pane" title="Focus Preview" type="button">
+                            <span class="panel-toggle-icon">
                                 <svg class="icon-collapse" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18 9 12l6-6"></path></svg>
                                 <svg class="icon-expand" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"></path></svg>
                             </span>

@@ -159,6 +159,23 @@ body.editor-page {
     overflow: hidden;
 }
 
+.preview-side::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at top right, rgba(0, 255, 255, 0.13), transparent 32%),
+        linear-gradient(135deg, rgba(0, 136, 255, 0.08), transparent 38%);
+    opacity: 0;
+    transition: opacity 320ms ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.preview-side.preview-focused::before {
+    opacity: 1;
+}
+
 .editor-container.editor-collapsed .preview-side {
     border-right: none;
 }
@@ -169,6 +186,15 @@ body.editor-page {
     border: none;
     background: #fff;
     display: block;
+    position: relative;
+    z-index: 0;
+    transition: transform 360ms cubic-bezier(0.22, 1, 0.36, 1), filter 320ms ease;
+    transform-origin: center center;
+}
+
+.preview-side.preview-focused iframe {
+    transform: scale(1.012);
+    filter: saturate(1.03) contrast(1.01);
 }
 
 .preview-restore-btn {
@@ -176,19 +202,46 @@ body.editor-page {
     top: 16px;
     right: 16px;
     z-index: 5;
-    border: 1px solid rgba(34, 211, 238, 0.35);
+    border: 1px solid rgba(34, 211, 238, 0.25);
     border-radius: 999px;
-    padding: 10px 14px;
-    font-family: 'VT323', monospace;
-    font-size: 18px;
+    padding: 8px 12px 8px 8px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
     color: #e0f2fe;
-    background: rgba(15, 23, 42, 0.85);
+    background: linear-gradient(180deg, rgba(12, 18, 29, 0.94), rgba(7, 12, 21, 0.88));
     cursor: pointer;
     box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
     display: inline-flex;
     align-items: center;
     gap: 10px;
-    transition: transform 220ms ease, background 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-14px) translateX(10px) scale(0.94);
+    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), opacity 220ms ease, background 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.preview-restore-btn.is-visible {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) translateX(0) scale(1);
+}
+
+.preview-restore-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #67e8f9;
+    background: radial-gradient(circle at 30% 30%, rgba(34, 211, 238, 0.24), rgba(15, 23, 42, 0.12));
+    box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.12);
+}
+
+.preview-restore-label {
+    white-space: nowrap;
 }
 
 .preview-restore-btn:hover {
@@ -213,7 +266,7 @@ body.editor-page {
 
 .editor-container.editor-collapsed .editor-side {
     opacity: 0;
-    transform: translateX(28px) scale(0.985);
+    transform: translateX(36px) scale(0.975);
     pointer-events: none;
 }
 
@@ -866,47 +919,76 @@ body.editor-page {
 }
 
 .panel-toggle-btn {
-    border: 1px solid rgba(34, 211, 238, 0.18);
+    position: relative;
+    border: 1px solid #232730;
     border-radius: 999px;
-    background: linear-gradient(180deg, rgba(17, 24, 39, 0.95), rgba(11, 18, 32, 0.92));
+    background:
+        linear-gradient(180deg, rgba(19, 23, 31, 0.96), rgba(10, 12, 17, 0.98));
     color: #cbd5e1;
-    padding: 0.45rem 0.7rem 0.45rem 0.55rem;
+    padding: 0.35rem 0.7rem 0.35rem 0.4rem;
     display: inline-flex;
     align-items: center;
     gap: 0.55rem;
     cursor: pointer;
-    transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease, color 220ms ease;
-    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.18);
+    overflow: hidden;
+    transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease, color 220ms ease, background 220ms ease;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03), 0 10px 22px rgba(0, 0, 0, 0.18);
+}
+
+.panel-toggle-btn::before {
+    content: "";
+    position: absolute;
+    inset: 1px;
+    border-radius: inherit;
+    background: linear-gradient(90deg, rgba(0, 255, 255, 0.06), transparent 42%, rgba(0, 136, 255, 0.08));
+    opacity: 0;
+    transition: opacity 220ms ease;
+    pointer-events: none;
 }
 
 .panel-toggle-btn:hover {
     transform: translateY(-1px);
     color: #ffffff;
-    border-color: rgba(103, 232, 249, 0.5);
-    box-shadow: 0 14px 26px rgba(8, 47, 73, 0.28);
+    border-color: rgba(74, 144, 226, 0.55);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04), 0 14px 26px rgba(8, 47, 73, 0.24);
 }
 
 .panel-toggle-btn.active {
     color: #f8fafc;
-    border-color: rgba(125, 211, 252, 0.62);
-    box-shadow: 0 0 0 1px rgba(103, 232, 249, 0.16), 0 18px 32px rgba(14, 165, 233, 0.2);
+    border-color: rgba(0, 255, 255, 0.36);
+    background: linear-gradient(180deg, rgba(10, 22, 33, 0.98), rgba(6, 14, 25, 0.98));
+    box-shadow: 0 0 0 1px rgba(0, 255, 255, 0.08), 0 18px 32px rgba(14, 165, 233, 0.14);
+}
+
+.panel-toggle-btn:hover::before,
+.panel-toggle-btn.active::before {
+    opacity: 1;
 }
 
 .panel-toggle-icon {
     width: 32px;
     height: 32px;
     border-radius: 999px;
-    background: radial-gradient(circle at 30% 30%, rgba(34, 211, 238, 0.22), rgba(15, 23, 42, 0.42));
+    background: radial-gradient(circle at 30% 30%, rgba(0, 255, 255, 0.16), rgba(15, 23, 42, 0.3));
     display: inline-flex;
     align-items: center;
     justify-content: center;
     position: relative;
     overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.08);
+    transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1), background 220ms ease, box-shadow 220ms ease;
 }
 
 .panel-toggle-icon svg {
     position: absolute;
     transition: opacity 220ms ease, transform 260ms ease;
+}
+
+.panel-toggle-btn:hover .panel-toggle-icon,
+.panel-toggle-btn.active .panel-toggle-icon {
+    transform: scale(1.04);
+    background: radial-gradient(circle at 30% 30%, rgba(0, 255, 255, 0.28), rgba(15, 23, 42, 0.34));
+    box-shadow: inset 0 0 0 1px rgba(103, 232, 249, 0.16), 0 0 20px rgba(0, 255, 255, 0.08);
 }
 
 .panel-toggle-btn .icon-expand {
@@ -925,10 +1007,24 @@ body.editor-page {
 }
 
 .panel-toggle-label {
-    font-family: 'VT323', monospace;
-    font-size: 1.15rem;
-    letter-spacing: 0.03em;
+    position: relative;
+    z-index: 1;
+    font-family: 'Inter', sans-serif;
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
     white-space: nowrap;
+}
+
+body.pane-transitioning .panel-toggle-icon {
+    animation: panePulse 360ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes panePulse {
+    0% { transform: scale(1); }
+    40% { transform: scale(1.1); }
+    100% { transform: scale(1); }
 }
 
 .code-tabs {

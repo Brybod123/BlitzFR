@@ -16,6 +16,7 @@ const btnToggleEditorPane = document.getElementById('btn-toggle-editor-pane');
 const btnRestoreEditorPane = document.getElementById('btn-restore-editor-pane');
 const saveBtn = document.querySelector('.save-btn');
 const hostedPublishApiBase = 'https://terminal.bookitreal.workers.dev';
+let editorPaneTransitionTimer = null;
 
 let chatMessages = [
     {
@@ -143,14 +144,20 @@ function applyEditorTheme(theme) {
 }
 
 function setEditorPaneCollapsed(collapsed) {
+    document.body.classList.add('pane-transitioning');
     editorContainer.classList.toggle('editor-collapsed', collapsed);
-    btnRestoreEditorPane.classList.toggle('hidden', !collapsed);
+    previewSide.classList.toggle('preview-focused', collapsed);
+    btnRestoreEditorPane.classList.toggle('is-visible', collapsed);
     btnToggleEditorPane.classList.toggle('active', collapsed);
     btnToggleEditorPane.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
     btnToggleEditorPane.setAttribute('title', collapsed ? 'Show Editor' : 'Collapse Editor');
     const label = btnToggleEditorPane.querySelector('.panel-toggle-label');
     if (label) label.textContent = collapsed ? 'Edit Again' : 'Focus Preview';
-    window.setTimeout(() => editor.layout(), collapsed ? 360 : 180);
+    window.clearTimeout(editorPaneTransitionTimer);
+    editorPaneTransitionTimer = window.setTimeout(() => {
+        document.body.classList.remove('pane-transitioning');
+        editor.layout();
+    }, 420);
 }
 
 window.blitzApplyTheme = (theme) => {
