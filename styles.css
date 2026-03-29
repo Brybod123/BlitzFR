@@ -135,6 +135,10 @@ body.editor-page {
     min-height: 100vh;
 }
 
+.hidden {
+    display: none !important;
+}
+
 .editor-container {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -173,11 +177,207 @@ body.editor-page {
     justify-content: space-between;
     align-items: center;
     flex-shrink: 0;
+    gap: 1rem;
 }
 
 .logo-sml {
     width: 50px;
     height: 50px;
+}
+
+.nav-center {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+}
+
+.header-utility-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.account-menu {
+    position: relative;
+}
+
+.account-trigger {
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid #2d3748;
+    border-radius: 999px;
+    background: #0d1117;
+    color: #94a3b8;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    overflow: hidden;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+
+.account-trigger:hover {
+    border-color: #4a90e2;
+}
+
+.account-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.account-avatar-fallback {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Inter', sans-serif;
+    font-weight: 700;
+    color: #dbeafe;
+    background: linear-gradient(135deg, #1d4ed8, #0f172a);
+}
+
+.account-avatar-fallback-lg {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    flex: 0 0 auto;
+}
+
+.account-panel {
+    position: absolute;
+    top: calc(100% + 10px);
+    right: 0;
+    width: 300px;
+    background: #0d1117;
+    border: 1px solid #2d3748;
+    border-radius: 16px;
+    padding: 14px;
+    box-shadow: 0 18px 32px rgba(0, 0, 0, 0.45);
+    z-index: 50;
+}
+
+.account-panel-head {
+    padding-bottom: 12px;
+    border-bottom: 1px solid #1f2937;
+    margin-bottom: 12px;
+}
+
+.account-id-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.account-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #f8fafc;
+    margin-bottom: 2px;
+}
+
+.account-email {
+    font-size: 0.85rem;
+    color: #94a3b8;
+    word-break: break-word;
+}
+
+.account-stat-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+.account-stat-card {
+    background: #111827;
+    border: 1px solid #243244;
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.account-stat-label,
+.account-section-label {
+    font-size: 0.72rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #64748b;
+}
+
+.account-stat-card strong {
+    color: #f8fafc;
+    font-size: 0.98rem;
+}
+
+.account-theme-section,
+.account-edit-section {
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.theme-switcher {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+}
+
+.theme-option {
+    border: 1px solid #2d3748;
+    border-radius: 10px;
+    background: #111827;
+    color: #cbd5e1;
+    padding: 9px 12px;
+    font: inherit;
+    cursor: pointer;
+}
+
+.theme-option.active {
+    border-color: #4a90e2;
+    color: #e0f2fe;
+    background: rgba(74, 144, 226, 0.14);
+}
+
+.account-input {
+    width: 100%;
+    border: 1px solid #243244;
+    border-radius: 10px;
+    background: #111827;
+    color: #e5e7eb;
+    padding: 10px 12px;
+    font: inherit;
+    outline: none;
+}
+
+.account-input::placeholder {
+    color: #64748b;
+}
+
+.account-input:focus {
+    border-color: #4a90e2;
+}
+
+.account-action-btn {
+    width: 100%;
+    border: 1px solid #2d3748;
+    border-radius: 10px;
+    background: #1d4ed8;
+    color: #ffffff;
+    padding: 10px 12px;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.account-action-btn:hover {
+    background: #2563eb;
 }
 
 .toggle-group {
