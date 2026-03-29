@@ -851,16 +851,20 @@ function getHourlyState() {
     const now = Date.now();
     let state = JSON.parse(localStorage.getItem('blitz_hourly_limit') || '{}');
     if (!state.ts || (now - state.ts) > 3600000) { // reset every 1 hour
-        state = { ts: now, count: 0 };
+        state = { ts: now, count: 0, spent: 0 };
     }
     return state;
 }
 
 function incrementHourlyRequests() {
     const state = getHourlyState();
+    const currentModelId = dropdownTrigger.dataset.value || "qwen/qwen3.5-flash-02-23";
+    const pricePerToken = parseFloat(modelPrices[currentModelId]) || 0.000005;
+    const requestCost = avgTokens * pricePerToken;
     state.count++;
+    state.spent = (Number(state.spent) || 0) + requestCost;
     localStorage.setItem('blitz_hourly_limit', JSON.stringify(state));
-    calculateEstimatedCost(dropdownTrigger.dataset.value);
+    calculateEstimatedCost(currentModelId);
     if (typeof window.blitzRefreshHourlyPanel === 'function') {
         window.blitzRefreshHourlyPanel();
     }
@@ -880,8 +884,9 @@ function getRemainingHourlyRequests(modelId) {
     const tier = window.firebaseUserProfile?.tier || 'basic';
     const hourlyBudgetByTier = { basic: 0.03, gold: 0.04, diamond: 0.05 };
     const hourlyBudget = hourlyBudgetByTier[tier] || hourlyBudgetByTier.basic;
-    const limit = Math.max(1, Math.floor(hourlyBudget / estCost));
-    return Math.max(0, limit - state.count);
+    const spent = Number(state.spent) || 0;
+    const remainingBudget = Math.max(0, hourlyBudget - spent);
+    return Math.max(0, Math.floor(remainingBudget / estCost));
 }
 
 async function updateModelStats() {

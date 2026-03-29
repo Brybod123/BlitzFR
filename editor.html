@@ -307,9 +307,8 @@
         function getHourlyUsage() {
             const hourlyBudget = tierBudgets[currentUserProfile.tier] || tierBudgets.basic;
             const state = JSON.parse(localStorage.getItem('blitz_hourly_limit') || '{}');
-            const estCost = parseFloat(localStorage.getItem('blitz_estimated_request_cost') || '0');
             const isFresh = state.ts && (Date.now() - state.ts) <= 3600000;
-            const used = isFresh ? (state.count || 0) * estCost : 0;
+            const used = isFresh ? (Number(state.spent) || 0) : 0;
             return {
                 hourlyBudget,
                 used,
