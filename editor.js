@@ -9,6 +9,11 @@ const btnFileExplorer = document.getElementById('btn-file-explorer');
 const fileExplorer = document.getElementById('file-explorer');
 const fileList = document.getElementById('file-list');
 const btnNewFile = document.getElementById('btn-new-file');
+const editorContainer = document.querySelector('.editor-container');
+const editorSide = document.querySelector('.editor-side');
+const previewSide = document.querySelector('.preview-side');
+const btnToggleEditorPane = document.getElementById('btn-toggle-editor-pane');
+const btnRestoreEditorPane = document.getElementById('btn-restore-editor-pane');
 const saveBtn = document.querySelector('.save-btn');
 const hostedPublishApiBase = 'https://terminal.bookitreal.workers.dev';
 
@@ -137,6 +142,14 @@ function applyEditorTheme(theme) {
     monaco.editor.setTheme(monacoTheme);
 }
 
+function setEditorPaneCollapsed(collapsed) {
+    editorContainer.classList.toggle('editor-collapsed', collapsed);
+    editorSide.classList.toggle('hidden', collapsed);
+    btnRestoreEditorPane.classList.toggle('hidden', !collapsed);
+    btnToggleEditorPane.setAttribute('title', collapsed ? 'Show Editor' : 'Collapse Editor');
+    editor.layout();
+}
+
 window.blitzApplyTheme = (theme) => {
     document.body.dataset.theme = theme === 'light' ? 'light' : 'dark';
     applyEditorTheme(document.body.dataset.theme);
@@ -225,7 +238,7 @@ function showDiff(filename, oldContent, newContent) {
         original: originalModel,
         modified: modifiedModel
     });
-    diffContainer.classList.remove('hidden');
+diffContainer.classList.remove('hidden');
     // Switch to file first
     openFile(filename);
 }
@@ -462,6 +475,9 @@ btnFileExplorer.addEventListener('click', () => {
     btnFileExplorer.classList.toggle('active');
     setTimeout(() => editor.layout(), 0);
 });
+
+btnToggleEditorPane.addEventListener('click', () => setEditorPaneCollapsed(true));
+btnRestoreEditorPane.addEventListener('click', () => setEditorPaneCollapsed(false));
 
 // Helper for AI File Editing
 function applyFileEdit(filename, search, replace) {

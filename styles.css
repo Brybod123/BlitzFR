@@ -147,11 +147,19 @@ body.editor-page {
     overflow: hidden;
 }
 
+.editor-container.editor-collapsed {
+    grid-template-columns: 1fr;
+}
+
 .preview-side {
     position: relative;
     border-right: 1px solid rgba(0, 136, 255, 0.2);
     background: #111;
     overflow: hidden;
+}
+
+.editor-container.editor-collapsed .preview-side {
+    border-right: none;
 }
 
 .preview-side iframe {
@@ -160,6 +168,27 @@ body.editor-page {
     border: none;
     background: #fff;
     display: block;
+}
+
+.preview-restore-btn {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 5;
+    border: 1px solid rgba(34, 211, 238, 0.35);
+    border-radius: 999px;
+    padding: 10px 14px;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    color: #e0f2fe;
+    background: rgba(15, 23, 42, 0.85);
+    cursor: pointer;
+    box-shadow: 0 14px 32px rgba(0, 0, 0, 0.28);
+}
+
+.preview-restore-btn:hover {
+    background: rgba(14, 165, 233, 0.18);
+    border-color: #67e8f9;
 }
 
 .editor-side {
@@ -821,7 +850,9 @@ body.editor-page {
 }
 
 .icon-nav-btn.active {
-    color: #4a90e2;
+    color: #ffffff;
+    border: 1px solid #67e8f9;
+    background: rgba(103, 232, 249, 0.12);
 }
 
 .code-tabs {
