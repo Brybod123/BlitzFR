@@ -909,6 +909,7 @@ async function updateModelStats() {
             { id: "x-ai/grok-code-fast-1", name: "Grok-Code Fast", type: "speed" },
             { id: "google/gemini-3.1-flash-lite-preview", name: "Gemini 3.1 Flash Lite", type: "speed" },
             { id: "google/gemini-3-flash-preview", name: "Gemini 3 Flash Preview", type: "speed" },
+            { id: "openai/gpt-oss-120b", name: "GPT OSS 120B", type: "cost" },
             { id: "xiaomi/mimo-v2-flash", name: "Mimo v2 Flash", type: "speed" },
             { id: "xiaomi/mimo-v2-pro", name: "Mimo v2 Pro", type: "performance" }
         ];

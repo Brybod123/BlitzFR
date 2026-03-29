@@ -40,6 +40,7 @@ export default async (req, context) => {
                 "x-ai/grok-code-fast-1",
                 "google/gemini-3.1-flash-lite-preview",
                 "google/gemini-3-flash-preview",
+                "openai/gpt-oss-120b",
                 "xiaomi/mimo-v2-flash",
                 "xiaomi/mimo-v2-pro"
             ];
@@ -75,6 +76,7 @@ export default async (req, context) => {
             "x-ai/grok-code-fast-1",
             "google/gemini-3.1-flash-lite-preview",
             "google/gemini-3-flash-preview",
+            "openai/gpt-oss-120b",
             "xiaomi/mimo-v2-flash",
             "xiaomi/mimo-v2-pro"
         ];
