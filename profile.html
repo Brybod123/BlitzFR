@@ -97,8 +97,8 @@
             ]);
 
             const user = userSnapshot.exists() ? userSnapshot.val() : null;
-            document.getElementById('profile-name').textContent = user?.displayName || `Creator ${userId.slice(0, 6)}`;
-            document.getElementById('profile-email').textContent = user?.email || userId;
+            document.getElementById('profile-name').textContent = user?.displayName || user?.name || `Creator ${userId.slice(0, 6)}`;
+            document.getElementById('profile-email').textContent = user?.email || user?.displayName || userId;
             setAvatar(
                 document.getElementById('profile-avatar'),
                 document.getElementById('profile-avatar-fallback'),

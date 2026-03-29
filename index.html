@@ -249,7 +249,7 @@
                 const safeName = document.createElement('span');
                 safeName.textContent = project.name || 'Untitled Project';
                 const creator = project.ownerUid ? userCache.get(project.ownerUid) : null;
-                const creatorName = creator?.displayName || creator?.email || shortUid(project.ownerUid);
+                const creatorName = creator?.displayName || creator?.email || project.ownerDisplayName || shortUid(project.ownerUid);
                 const creatorLine = project.ownerUid
                     ? '<a class="project-owner-link" onclick="event.stopPropagation()" href="profile.html?user=' + encodeURIComponent(project.ownerUid) + '">by ' + escapeHtml(creatorName) + '</a>'
                     : '<span class="project-owner-muted">by Unknown creator</span>';

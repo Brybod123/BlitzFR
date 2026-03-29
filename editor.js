@@ -1437,6 +1437,8 @@ async function saveProject() {
         name: projectName,
         hostedSlug,
         hostedWebsite,
+        ownerDisplayName: currentUser.displayName || currentUser.email || currentUser.uid,
+        ownerPhotoURL: currentUser.photoURL || '',
         thumbnail,
         updatedAt: Date.now(),
         forkedFrom: forkSourceProject,
