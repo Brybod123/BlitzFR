@@ -144,10 +144,13 @@ function applyEditorTheme(theme) {
 
 function setEditorPaneCollapsed(collapsed) {
     editorContainer.classList.toggle('editor-collapsed', collapsed);
-    editorSide.classList.toggle('hidden', collapsed);
     btnRestoreEditorPane.classList.toggle('hidden', !collapsed);
+    btnToggleEditorPane.classList.toggle('active', collapsed);
+    btnToggleEditorPane.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
     btnToggleEditorPane.setAttribute('title', collapsed ? 'Show Editor' : 'Collapse Editor');
-    editor.layout();
+    const label = btnToggleEditorPane.querySelector('.panel-toggle-label');
+    if (label) label.textContent = collapsed ? 'Edit Again' : 'Focus Preview';
+    window.setTimeout(() => editor.layout(), collapsed ? 360 : 180);
 }
 
 window.blitzApplyTheme = (theme) => {
@@ -476,7 +479,10 @@ btnFileExplorer.addEventListener('click', () => {
     setTimeout(() => editor.layout(), 0);
 });
 
-btnToggleEditorPane.addEventListener('click', () => setEditorPaneCollapsed(true));
+btnToggleEditorPane.addEventListener('click', () => {
+    const nextState = !editorContainer.classList.contains('editor-collapsed');
+    setEditorPaneCollapsed(nextState);
+});
 btnRestoreEditorPane.addEventListener('click', () => setEditorPaneCollapsed(false));
 
 // Helper for AI File Editing
