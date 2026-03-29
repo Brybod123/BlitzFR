@@ -52,171 +52,918 @@ const starterTemplates = {
         js: ''
     },
     default: {
-        html: wrapTemplateHtml('Blitz Default', `    <div class="main-container">
-    <h1 class="heading">My First Blitz Website</h1>
-    <p class="description">This site was built using HTML, CSS, and JS. Try editing the code on the right!</p>
-    <button id="interaction-btn" class="btn">Click Me!</button>
-    </div>`),
-        css: `.main-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    padding: 20px;
-    background: rgba(0, 136, 255, 0.1);
-    border-radius: 15px;
-    font-family: sans-serif;
-    gap: 20px;
+        html: wrapTemplateHtml('Blitz Default', `    <main class="default-app">
+        <section class="default-hero">
+            <span class="eyebrow">Starter template</span>
+            <h1>Build something clean, fast, and intentional.</h1>
+            <p>
+                Start here when you want a polished landing page with enough structure to grow into a real app.
+            </p>
+            <div class="hero-actions">
+                <button id="primary-cta" class="primary-btn">Get Started</button>
+                <span class="status-pill">Ready to edit</span>
+            </div>
+        </section>
+
+        <aside class="default-panel">
+            <div class="metric">
+                <strong>3</strong>
+                <span>Files</span>
+            </div>
+            <div class="metric">
+                <strong>1</strong>
+                <span>Action</span>
+            </div>
+            <div class="metric">
+                <strong>100%</strong>
+                <span>Editable</span>
+            </div>
+        </aside>
+    </main>`),
+        css: `:root {
+    color-scheme: dark;
+    --bg: #080b14;
+    --bg-accent: #111827;
+    --panel: rgba(14, 19, 34, 0.82);
+    --panel-border: rgba(148, 163, 184, 0.18);
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #22d3ee;
+    --accent-2: #8b5cf6;
 }
 
-.heading {
-    color: #00ffff;
-    margin: 0;
+* {
+    box-sizing: border-box;
 }
 
-.description {
-    color: #ffffff;
-    margin: 0;
-}
-
-.btn {
-    background: #0088ff;
-    color: #000000;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-family: inherit;
-    font-weight: bold;
-}
-
-.btn:hover {
-    background: #00aaff;
-}`,
-        js: `const btn = document.getElementById('interaction-btn');
-btn.addEventListener('click', () => {
-    console.log("Button clicked!");
-    btn.textContent = "You clicked it!";
-    btn.style.background = "#00ff00";
-});`
-    },
-    'liquid-glass': {
-        html: wrapTemplateHtml('Liquid Glass', `    <div class="glass-shell">
-    <div class="glass-card">
-        <h1>Liquid Glass</h1>
-        <p>Layer frosted panels, soft shadows, and blur effects.</p>
-    </div>
-    </div>`),
-        css: `body {
+body {
     margin: 0;
     min-height: 100vh;
-    display: grid;
-    place-items: center;
-    background: radial-gradient(circle at top, #1e293b, #020617 70%);
-    color: white;
-    font-family: sans-serif;
+    font-family: Inter, system-ui, sans-serif;
+    color: var(--text);
+    background:
+        radial-gradient(circle at top left, rgba(34, 211, 238, 0.16), transparent 32%),
+        radial-gradient(circle at top right, rgba(139, 92, 246, 0.22), transparent 28%),
+        linear-gradient(160deg, var(--bg), var(--bg-accent));
 }
 
-.glass-shell {
+.default-app {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(280px, 0.8fr);
+    gap: 24px;
     padding: 32px;
+    align-items: center;
+}
+
+.default-hero,
+.default-panel {
+    border: 1px solid var(--panel-border);
+    background: var(--panel);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    box-shadow: 0 30px 80px rgba(0, 0, 0, 0.35);
+}
+
+.default-hero {
+    border-radius: 32px;
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+}
+
+.default-hero::after {
+    content: "";
+    position: absolute;
+    inset: auto -15% -35% auto;
+    width: 260px;
+    height: 260px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(34, 211, 238, 0.22), transparent 70%);
+    pointer-events: none;
+}
+
+.eyebrow {
+    display: inline-flex;
+    padding: 8px 12px;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #0f172a;
+    background: linear-gradient(135deg, #67e8f9, #a78bfa);
+}
+
+.default-hero h1 {
+    margin: 18px 0 14px;
+    font-size: clamp(2.6rem, 5vw, 5rem);
+    line-height: 0.95;
+    letter-spacing: -0.05em;
+    max-width: 11ch;
+}
+
+.default-hero p {
+    margin: 0;
+    max-width: 56ch;
+    color: var(--muted);
+    font-size: 1.05rem;
+    line-height: 1.65;
+}
+
+.hero-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+}
+
+.primary-btn {
+    border: 0;
+    border-radius: 999px;
+    padding: 14px 20px;
+    background: linear-gradient(135deg, #22d3ee, #8b5cf6);
+    color: #fff;
+    font: 700 0.98rem/1 Inter, system-ui, sans-serif;
+    cursor: pointer;
+    box-shadow: 0 18px 40px rgba(34, 211, 238, 0.24);
+}
+
+.status-pill {
+    padding: 10px 14px;
+    border-radius: 999px;
+    color: #cbd5e1;
+    background: rgba(148, 163, 184, 0.12);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+}
+
+.default-panel {
+    border-radius: 28px;
+    padding: 20px;
+    display: grid;
+    gap: 14px;
+}
+
+.metric {
+    border-radius: 22px;
+    padding: 20px;
+    background: rgba(15, 23, 42, 0.68);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.metric strong {
+    display: block;
+    font-size: 2rem;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+
+.metric span {
+    color: var(--muted);
+    font-size: 0.98rem;
+}`,
+        js: `const cta = document.getElementById('primary-cta');
+const metrics = Array.from(document.querySelectorAll('.metric strong'));
+let clicks = 0;
+
+cta.addEventListener('click', () => {
+    clicks += 1;
+    cta.textContent = clicks === 1 ? 'Started' : 'Started ' + clicks + ' times';
+    metrics[1].textContent = String(Math.min(99, clicks * 2 || 1));
+});
+`
+    },
+    'liquid-glass': {
+        html: wrapTemplateHtml('Liquid Glass', `    <main class="glass-dashboard">
+        <section class="glass-hero">
+            <div class="glass-copy">
+                <span class="glass-badge">Liquid Glass</span>
+                <h1>Soft panels, bright gradients, and a very modern first impression.</h1>
+                <p>
+                    A polished starting point for portfolio pages, dashboards, or any interface that wants depth
+                    without feeling heavy.
+                </p>
+            </div>
+
+            <div class="glass-orb"></div>
+        </section>
+
+        <section class="glass-grid">
+            <article class="glass-card">
+                <span>Focus</span>
+                <strong>86%</strong>
+            </article>
+            <article class="glass-card">
+                <span>Clarity</span>
+                <strong>High</strong>
+            </article>
+            <article class="glass-card glass-card-wide">
+                <span>Status</span>
+                <strong id="glass-status">Calm and responsive</strong>
+                <button id="glass-toggle" class="glass-btn">Shift Accent</button>
+            </article>
+        </section>
+    </main>`),
+        css: `:root {
+    color-scheme: dark;
+    --bg-a: #07111f;
+    --bg-b: #111827;
+    --glass: rgba(255, 255, 255, 0.1);
+    --glass-border: rgba(255, 255, 255, 0.18);
+    --accent: #67e8f9;
+    --accent-2: #c084fc;
+    --text: #f8fafc;
+    --muted: #cbd5e1;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Inter, system-ui, sans-serif;
+    color: var(--text);
+    background:
+        radial-gradient(circle at 15% 15%, rgba(103, 232, 249, 0.22), transparent 26%),
+        radial-gradient(circle at 85% 12%, rgba(192, 132, 252, 0.22), transparent 24%),
+        linear-gradient(160deg, var(--bg-a), var(--bg-b));
+}
+
+.glass-dashboard {
+    min-height: 100vh;
+    padding: 32px;
+    display: grid;
+    gap: 20px;
+    align-content: center;
+}
+
+.glass-hero,
+.glass-card {
+    background: var(--glass);
+    border: 1px solid var(--glass-border);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.34);
+    backdrop-filter: blur(22px);
+    -webkit-backdrop-filter: blur(22px);
+}
+
+.glass-hero {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) 240px;
+    gap: 24px;
+    align-items: center;
+    padding: 34px;
+    border-radius: 32px;
+}
+
+.glass-hero::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(103, 232, 249, 0.12), transparent 45%, rgba(192, 132, 252, 0.12));
+    pointer-events: none;
+}
+
+.glass-copy {
+    position: relative;
+    z-index: 1;
+}
+
+.glass-badge {
+    display: inline-flex;
+    padding: 8px 12px;
+    border-radius: 999px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-size: 0.78rem;
+    color: #0f172a;
+    background: linear-gradient(135deg, #67e8f9, #c084fc);
+}
+
+.glass-copy h1 {
+    margin: 18px 0 14px;
+    font-size: clamp(2.2rem, 4vw, 4.6rem);
+    line-height: 0.98;
+    max-width: 12ch;
+}
+
+.glass-copy p {
+    margin: 0;
+    max-width: 52ch;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.glass-orb {
+    width: 220px;
+    height: 220px;
+    border-radius: 50%;
+    justify-self: end;
+    background: radial-gradient(circle at 30% 30%, #ffffff, #67e8f9 34%, #8b5cf6 72%, rgba(139, 92, 246, 0.2) 100%);
+    filter: blur(0.2px);
+    box-shadow: 0 24px 60px rgba(103, 232, 249, 0.2);
+    animation: floatOrb 6s ease-in-out infinite;
+}
+
+.glass-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
 }
 
 .glass-card {
-    padding: 32px 36px;
-    border-radius: 28px;
-    background: rgba(255, 255, 255, 0.12);
-    border: 1px solid rgba(255, 255, 255, 0.22);
-    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
+    border-radius: 24px;
+    padding: 22px;
+}
+
+.glass-card span {
+    display: block;
+    color: #e2e8f0;
+    font-size: 0.9rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+}
+
+.glass-card strong {
+    font-size: 2rem;
+}
+
+.glass-card-wide {
+    grid-column: span 1;
+}
+
+.glass-btn {
+    margin-top: 16px;
+    border: 0;
+    border-radius: 999px;
+    padding: 12px 16px;
+    color: #0f172a;
+    background: linear-gradient(135deg, #67e8f9, #c084fc);
+    font-weight: 700;
+    cursor: pointer;
+}
+
+@keyframes floatOrb {
+    0%, 100% { transform: translateY(0px) scale(1); }
+    50% { transform: translateY(-12px) scale(1.02); }
 }`,
-        js: `console.log('Liquid Glass starter loaded');`
-    },
-    platformer: {
-        html: wrapTemplateHtml('Platformer', `    <div class="game">
-    <div class="player" id="player"></div>
-    <div class="ground"></div>
-    </div>`),
-        css: `body {
-    margin: 0;
-    overflow: hidden;
-    background: linear-gradient(#87ceeb, #dff3ff);
-}
+        js: `const toggle = document.getElementById('glass-toggle');
+const status = document.getElementById('glass-status');
+const accents = [
+    ['#67e8f9', '#c084fc'],
+    ['#fda4af', '#fb7185'],
+    ['#86efac', '#22c55e']
+];
+let accentIndex = 0;
 
-.game {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-}
-
-.player {
-    position: absolute;
-    left: 80px;
-    bottom: 80px;
-    width: 42px;
-    height: 42px;
-    background: #ef4444;
-    border-radius: 10px;
-}
-
-.ground {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 80px;
-    background: #22c55e;
-}`,
-        js: `const player = document.getElementById('player');
-let x = 80;
-let y = 80;
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'ArrowLeft') x -= 10;
-    if (e.key === 'ArrowRight') x += 10;
-    if (e.key === 'ArrowUp') y += 10;
-    if (e.key === 'ArrowDown') y -= 10;
-    player.style.left = x + 'px';
-    player.style.bottom = y + 'px';
+toggle.addEventListener('click', () => {
+    accentIndex = (accentIndex + 1) % accents.length;
+    const [a, b] = accents[accentIndex];
+    document.documentElement.style.setProperty('--accent', a);
+    document.documentElement.style.setProperty('--accent-2', b);
+    status.textContent = ['Calm and responsive', 'Softly glowing', 'Freshly tuned'][accentIndex];
 });`
     },
-    clicker: {
-        html: wrapTemplateHtml('Clicker Game', `    <div class="clicker-wrap">
-    <h1>Clicker Game</h1>
-    <button id="click-btn">Click</button>
-    <p>Score: <span id="score">0</span></p>
-    </div>`),
-        css: `body {
+    platformer: {
+        html: wrapTemplateHtml('Platformer', `    <main class="platformer-shell">
+        <header class="platformer-hud">
+            <div>
+                <span class="hud-label">Platformer</span>
+                <h1>Collect the stars and reach the flag.</h1>
+            </div>
+            <div class="hud-stats">
+                <span>Coins: <strong id="coin-count">0</strong></span>
+                <span>Lives: <strong id="life-count">3</strong></span>
+                <span>Status: <strong id="status-text">Run</strong></span>
+            </div>
+        </header>
+
+        <section class="platformer-stage" id="stage">
+            <div class="platformer-flag"></div>
+            <div class="platformer-player" id="player"></div>
+            <div class="platform platform-1"></div>
+            <div class="platform platform-2"></div>
+            <div class="platform platform-3"></div>
+            <div class="coin coin-1"></div>
+            <div class="coin coin-2"></div>
+            <div class="coin coin-3"></div>
+        </section>
+    </main>`),
+        css: `:root {
+    color-scheme: dark;
+    --sky: #0f172a;
+    --sky-2: #1d4ed8;
+    --ground: #14532d;
+    --platform: #38bdf8;
+    --text: #f8fafc;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
     margin: 0;
     min-height: 100vh;
+    font-family: Inter, system-ui, sans-serif;
+    color: var(--text);
+    background:
+        radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.16), transparent 34%),
+        linear-gradient(180deg, var(--sky), #020617 72%);
+    overflow: hidden;
+}
+
+.platformer-shell {
+    min-height: 100vh;
+    padding: 24px;
     display: grid;
-    place-items: center;
-    background: linear-gradient(135deg, #111827, #1f2937);
-    color: white;
-    font-family: sans-serif;
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 18px;
 }
 
-.clicker-wrap {
-    text-align: center;
+.platformer-hud {
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    align-items: end;
+    padding: 18px 22px;
+    border-radius: 22px;
+    background: rgba(15, 23, 42, 0.74);
+    border: 1px solid rgba(148, 163, 184, 0.18);
+}
+
+.hud-label {
+    display: inline-flex;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 0.14em;
+    font-size: 0.78rem;
+    color: #93c5fd;
+}
+
+.platformer-hud h1 {
+    margin: 0;
+    font-size: clamp(1.8rem, 3vw, 3rem);
+}
+
+.hud-stats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    color: #cbd5e1;
+}
+
+.hud-stats strong {
+    color: #fff;
+}
+
+.platformer-stage {
+    position: relative;
+    min-height: 520px;
+    border-radius: 30px;
+    overflow: hidden;
+    background:
+        linear-gradient(180deg, rgba(56, 189, 248, 0.1), rgba(15, 23, 42, 0.12)),
+        linear-gradient(180deg, transparent 72%, rgba(20, 83, 45, 0.95) 72%);
+    border: 1px solid rgba(148, 163, 184, 0.16);
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.35);
+}
+
+.platformer-stage::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 18% 18%, rgba(255, 255, 255, 0.18), transparent 10%),
+        radial-gradient(circle at 82% 24%, rgba(255, 255, 255, 0.12), transparent 12%),
+        linear-gradient(180deg, transparent 70%, rgba(20, 83, 45, 0.9) 70%);
+    pointer-events: none;
+}
+
+.platformer-player,
+.platform,
+.coin,
+.platformer-flag {
+    position: absolute;
+}
+
+.platformer-player {
+    left: 0;
+    bottom: 0;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #fb7185, #ef4444);
+    box-shadow: 0 12px 24px rgba(239, 68, 68, 0.35);
+}
+
+.platform {
+    height: 16px;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #38bdf8, #0ea5e9);
+    box-shadow: 0 12px 30px rgba(14, 165, 233, 0.22);
+}
+
+.platform-1 { left: 56px; bottom: 96px; width: 160px; }
+.platform-2 { left: 280px; bottom: 180px; width: 180px; }
+.platform-3 { right: 88px; bottom: 250px; width: 200px; }
+
+.coin {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 30% 30%, #fff7b0, #f59e0b);
+    box-shadow: 0 0 18px rgba(245, 158, 11, 0.35);
+    animation: coinPulse 1.6s ease-in-out infinite;
+}
+
+.coin-1 { left: 110px; bottom: 136px; }
+.coin-2 { left: 360px; bottom: 220px; animation-delay: 0.4s; }
+.coin-3 { right: 140px; bottom: 290px; animation-delay: 0.8s; }
+
+.platformer-flag {
+    right: 48px;
+    bottom: 250px;
+    width: 12px;
+    height: 120px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.65);
+}
+
+.platformer-flag::after {
+    content: "";
+    position: absolute;
+    top: 8px;
+    left: 12px;
+    width: 66px;
+    height: 34px;
+    border-radius: 0 18px 18px 0;
+    background: linear-gradient(135deg, #f8fafc, #22d3ee);
+    clip-path: polygon(0 0, 100% 18%, 72% 100%, 0 84%);
+}
+
+@keyframes coinPulse {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}`,
+        js: `const player = document.getElementById('player');
+const stage = document.getElementById('stage');
+const coinCountEl = document.getElementById('coin-count');
+const lifeCountEl = document.getElementById('life-count');
+const statusText = document.getElementById('status-text');
+const coins = Array.from(document.querySelectorAll('.coin'));
+
+const keys = new Set();
+const world = {
+    x: 72,
+    y: 118,
+    vx: 0,
+    vy: 0,
+    width: 34,
+    height: 34,
+    onGround: false,
+    coins: 0,
+    lives: 3
+};
+
+const platforms = [
+    { x: 56, y: 96, w: 160, h: 16 },
+    { x: 280, y: 180, w: 180, h: 16 },
+    { x: 608, y: 250, w: 200, h: 16 }
+];
+
+const goal = { x: 836, y: 250, w: 66, h: 120 };
+const gravity = 0.9;
+const moveSpeed = 0.7;
+const jumpStrength = 14;
+
+document.addEventListener('keydown', (event) => {
+    keys.add(event.key.toLowerCase());
+    if ((event.key === ' ' || event.key === 'ArrowUp') && world.onGround) {
+        world.vy = -jumpStrength;
+        world.onGround = false;
+        statusText.textContent = 'Jump';
+    }
+});
+
+document.addEventListener('keyup', (event) => {
+    keys.delete(event.key.toLowerCase());
+});
+
+function intersects(a, b) {
+    return a.x < b.x + b.w && a.x + a.width > b.x && a.y < b.y + b.h && a.y + a.height > b.y;
+}
+
+function updatePlayerPosition() {
+    if (keys.has('arrowleft') || keys.has('a')) world.vx = Math.max(world.vx - moveSpeed, -5);
+    if (keys.has('arrowright') || keys.has('d')) world.vx = Math.min(world.vx + moveSpeed, 5);
+    if (!(keys.has('arrowleft') || keys.has('a') || keys.has('arrowright') || keys.has('d'))) {
+        world.vx *= 0.84;
+    }
+
+    world.vy += gravity;
+    world.x += world.vx;
+    world.y += world.vy;
+    world.onGround = false;
+
+    const floorY = stage.clientHeight - 72 - world.height;
+    if (world.y >= floorY) {
+        world.y = floorY;
+        world.vy = 0;
+        world.onGround = true;
+    }
+
+    for (const platform of platforms) {
+        const playerBox = { x: world.x, y: world.y, width: world.width, height: world.height };
+        if (!intersects(playerBox, platform)) continue;
+        const playerBottom = world.y + world.height;
+        const playerTop = world.y;
+        const platformTop = platform.y;
+        const platformBottom = platform.y + platform.h;
+        if (playerBottom - world.vy <= platformTop + 10 && world.vy >= 0) {
+            world.y = platformTop - world.height;
+            world.vy = 0;
+            world.onGround = true;
+        } else if (playerTop - world.vy >= platformBottom - 10 && world.vy < 0) {
+            world.y = platformBottom;
+            world.vy = 0;
+        }
+    }
+
+    if (world.x < 0) {
+        world.x = 0;
+        world.vx = 0;
+    }
+    const maxX = stage.clientWidth - world.width;
+    if (world.x > maxX) {
+        world.x = maxX;
+        world.vx = 0;
+    }
+    if (world.y > stage.clientHeight - world.height) {
+        world.y = stage.clientHeight - world.height;
+        world.vy = 0;
+    }
+}
+
+function updateCoins() {
+    coins.forEach((coin, index) => {
+        const rect = coin.getBoundingClientRect();
+        const stageRect = stage.getBoundingClientRect();
+        const coinBox = {
+            x: rect.left - stageRect.left,
+            y: rect.top - stageRect.top,
+            width: rect.width,
+            height: rect.height
+        };
+        const playerBox = { x: world.x, y: world.y, width: world.width, height: world.height };
+        if (coin.dataset.collected === 'true') return;
+        if (intersects(playerBox, coinBox)) {
+            coin.dataset.collected = 'true';
+            coin.style.opacity = '0';
+            world.coins += 1;
+            coinCountEl.textContent = String(world.coins);
+        }
+    });
+}
+
+function checkWin() {
+    const playerBox = { x: world.x, y: world.y, width: world.width, height: world.height };
+    if (intersects(playerBox, goal)) {
+        statusText.textContent = 'Goal reached';
+        world.vx *= 0.2;
+    }
+}
+
+function render() {
+    player.style.transform = 'translate(' + world.x + 'px, ' + world.y + 'px)';
+    lifeCountEl.textContent = String(world.lives);
+}
+
+function loop() {
+    updatePlayerPosition();
+    updateCoins();
+    checkWin();
+    render();
+    requestAnimationFrame(loop);
+}
+
+render();
+loop();`
+    },
+    clicker: {
+        html: wrapTemplateHtml('Clicker Game', `    <main class="clicker-app">
+        <section class="clicker-hero">
+            <span class="eyebrow">Arcade starter</span>
+            <h1>Tap to build a tiny economy.</h1>
+            <p>
+                A more thoughtful clicker foundation with upgrades, an auto-income loop, and enough UI to extend
+                into a real game.
+            </p>
+            <button id="click-btn" class="clicker-btn">Tap the Core</button>
+        </section>
+
+        <aside class="clicker-panel">
+            <div class="score-card">
+                <span>Score</span>
+                <strong id="score">0</strong>
+            </div>
+            <div class="score-card">
+                <span>Per click</span>
+                <strong id="power">1</strong>
+            </div>
+            <div class="score-card">
+                <span>Auto / sec</span>
+                <strong id="auto">0</strong>
+            </div>
+            <div class="upgrade-list">
+                <button class="upgrade-btn" id="upgrade-power">Upgrade click (+1) - 10</button>
+                <button class="upgrade-btn" id="upgrade-auto">Hire auto-clicker (+1/s) - 25</button>
+            </div>
+        </aside>
+    </main>`),
+        css: `:root {
+    color-scheme: dark;
+    --bg: #09090f;
+    --panel: rgba(17, 24, 39, 0.86);
+    --border: rgba(168, 85, 247, 0.22);
+    --text: #f8fafc;
+    --muted: #94a3b8;
+    --accent: #a855f7;
+    --accent-2: #22d3ee;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Inter, system-ui, sans-serif;
+    color: var(--text);
+    background:
+        radial-gradient(circle at 20% 20%, rgba(168, 85, 247, 0.18), transparent 28%),
+        radial-gradient(circle at 80% 20%, rgba(34, 211, 238, 0.14), transparent 24%),
+        linear-gradient(160deg, var(--bg), #111827 78%);
+}
+
+.clicker-app {
+    min-height: 100vh;
     padding: 32px;
-    border-radius: 24px;
-    background: rgba(255, 255, 255, 0.08);
-    border: 1px solid rgba(255, 255, 255, 0.12);
+    display: grid;
+    grid-template-columns: minmax(0, 1.2fr) minmax(290px, 0.8fr);
+    gap: 20px;
+    align-items: center;
 }
 
-#click-btn {
-    padding: 14px 24px;
+.clicker-hero,
+.clicker-panel {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    box-shadow: 0 26px 70px rgba(0, 0, 0, 0.34);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+}
+
+.clicker-hero {
+    border-radius: 32px;
+    padding: 40px;
+    position: relative;
+    overflow: hidden;
+}
+
+.clicker-hero::after {
+    content: "";
+    position: absolute;
+    inset: auto -15% -20% auto;
+    width: 320px;
+    height: 320px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(168, 85, 247, 0.18), transparent 65%);
+    pointer-events: none;
+}
+
+.clicker-hero h1 {
+    margin: 18px 0 14px;
+    font-size: clamp(2.4rem, 4.4vw, 4.8rem);
+    line-height: 0.96;
+    max-width: 12ch;
+}
+
+.clicker-hero p {
+    margin: 0 0 28px;
+    max-width: 54ch;
+    color: var(--muted);
+    line-height: 1.6;
+}
+
+.clicker-btn {
     border: 0;
-    border-radius: 14px;
-    background: #a855f7;
-    color: white;
-    font-size: 1.1rem;
+    border-radius: 24px;
+    padding: 18px 26px;
+    color: #fff;
+    font: 800 1.05rem/1 Inter, system-ui, sans-serif;
+    cursor: pointer;
+    background: linear-gradient(135deg, #a855f7, #22d3ee);
+    box-shadow: 0 18px 40px rgba(168, 85, 247, 0.28);
+}
+
+.clicker-panel {
+    border-radius: 28px;
+    padding: 20px;
+    display: grid;
+    gap: 12px;
+}
+
+.score-card {
+    border-radius: 22px;
+    padding: 18px;
+    background: rgba(15, 23, 42, 0.62);
+    border: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.score-card span {
+    display: block;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.78rem;
+    margin-bottom: 8px;
+}
+
+.score-card strong {
+    font-size: 2rem;
+}
+
+.upgrade-list {
+    display: grid;
+    gap: 10px;
+    margin-top: 6px;
+}
+
+.upgrade-btn {
+    border-radius: 18px;
+    border: 1px solid rgba(168, 85, 247, 0.22);
+    background: rgba(168, 85, 247, 0.12);
+    color: #f5d0fe;
+    padding: 14px 16px;
+    font: 700 0.95rem/1.2 Inter, system-ui, sans-serif;
+    text-align: left;
     cursor: pointer;
 }`,
         js: `let score = 0;
+let clickPower = 1;
+let autoPower = 0;
+
 const scoreEl = document.getElementById('score');
-document.getElementById('click-btn').addEventListener('click', () => {
-    score += 1;
-    scoreEl.textContent = score;
-});`
+const powerEl = document.getElementById('power');
+const autoEl = document.getElementById('auto');
+const clickBtn = document.getElementById('click-btn');
+const upgradePowerBtn = document.getElementById('upgrade-power');
+const upgradeAutoBtn = document.getElementById('upgrade-auto');
+
+function render() {
+    scoreEl.textContent = String(score);
+    powerEl.textContent = String(clickPower);
+    autoEl.textContent = String(autoPower);
+    upgradePowerBtn.textContent = 'Upgrade click (+1) - ' + (10 + (clickPower - 1) * 8);
+    upgradeAutoBtn.textContent = 'Hire auto-clicker (+1/s) - ' + (25 + autoPower * 18);
+}
+
+clickBtn.addEventListener('click', () => {
+    score += clickPower;
+    clickBtn.style.transform = 'scale(0.98)';
+    requestAnimationFrame(() => (clickBtn.style.transform = 'scale(1)'));
+    render();
+});
+
+upgradePowerBtn.addEventListener('click', () => {
+    const cost = 10 + (clickPower - 1) * 8;
+    if (score < cost) return;
+    score -= cost;
+    clickPower += 1;
+    render();
+});
+
+upgradeAutoBtn.addEventListener('click', () => {
+    const cost = 25 + autoPower * 18;
+    if (score < cost) return;
+    score -= cost;
+    autoPower += 1;
+    render();
+});
+
+setInterval(() => {
+    if (!autoPower) return;
+    score += autoPower;
+    render();
+}, 1000);
+
+render();`
     }
 };
 
