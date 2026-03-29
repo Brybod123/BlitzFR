@@ -200,7 +200,7 @@
                 hostedLink.style.display = 'none';
             } else {
                 const project = snapshot.val();
-                const hostedWebsite = project.hostedWebsite || '';
+                const hostedWebsite = ensureTrailingSlash(project.hostedWebsite || '');
                 const name = project.name || projectId;
 
                 projectLabel.innerHTML = `<strong>${escapeHtml(name)}</strong> · ${escapeHtml(projectId)}`;
@@ -217,6 +217,12 @@
                     emptyState.classList.add('hidden');
                 }
             }
+        }
+
+        function ensureTrailingSlash(value) {
+            const trimmed = String(value).trim();
+            if (!trimmed) return '';
+            return trimmed.endsWith('/') ? trimmed : `${trimmed}/`;
         }
 
         function escapeHtml(value) {
