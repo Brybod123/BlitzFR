@@ -310,12 +310,13 @@
                 window.firebaseAuthReady = false;
             }
             await ensureUserDirectoryEntry(user);
+            await loadHourlyUsageState(user);
             renderAccount(user);
         });
 
         function getHourlyUsage() {
             const hourlyBudget = tierBudgets[currentUserProfile.tier] || tierBudgets.basic;
-            const state = JSON.parse(localStorage.getItem('blitz_hourly_limit') || '{}');
+            const state = window.firebaseHourlyState || { ts: 0, spent: 0, count: 0 };
             const isFresh = state.ts && (Date.now() - state.ts) <= 3600000;
             const used = isFresh ? (Number(state.spent) || 0) : 0;
             return {
@@ -325,6 +326,23 @@
                 remainingCredits: Math.max(0, Math.round((hourlyBudget - used) * 100 * creditsPerCent)),
                 usedCredits: Math.max(0, Math.round(used * 100 * creditsPerCent))
             };
+        }
+
+        async function loadHourlyUsageState(user) {
+            if (!user) {
+                window.firebaseHourlyState = { ts: 0, spent: 0, count: 0 };
+                return window.firebaseHourlyState;
+            }
+
+            const usageRef = ref(db, `users/${user.uid}/hourlyUsage`);
+            const snapshot = await get(usageRef);
+            const state = snapshot.exists() ? snapshot.val() : { ts: 0, spent: 0, count: 0 };
+            window.firebaseHourlyState = {
+                ts: Number(state.ts) || 0,
+                spent: Number(state.spent) || 0,
+                count: Number(state.count) || 0
+            };
+            return window.firebaseHourlyState;
         }
 
         function animateUsageCredits(targetCredits) {

@@ -555,7 +555,7 @@ generateBtn.addEventListener('click', async () => {
     }
 
     chatMessages.push({ role: 'user', content: promptText });
-    incrementHourlyRequests();
+    await incrementHourlyRequests();
 
     // Append user message
     const userMsg = document.createElement('div');
@@ -803,12 +803,6 @@ window.setBalance = (num) => {
     calculateEstimatedCost(dropdownTrigger.dataset.value);
 };
 
-window.resetHourlyLimit = () => {
-    localStorage.removeItem('blitz_hourly_limit');
-    console.log("DEBUG: Hourly limit reset.");
-    calculateEstimatedCost(dropdownTrigger.dataset.value);
-};
-
 // Credits Logic
 async function updateCredits() {
     try {
@@ -871,21 +865,26 @@ function formatSigDigit(n) {
 // Hourly Limit Tracking
 function getHourlyState() {
     const now = Date.now();
-    let state = JSON.parse(localStorage.getItem('blitz_hourly_limit') || '{}');
+    let state = window.firebaseHourlyState || {};
     if (!state.ts || (now - state.ts) > 3600000) { // reset every 1 hour
         state = { ts: now, count: 0, spent: 0 };
     }
     return state;
 }
 
-function incrementHourlyRequests() {
+async function incrementHourlyRequests() {
     const state = getHourlyState();
     const currentModelId = dropdownTrigger.dataset.value || "qwen/qwen3.5-flash-02-23";
     const pricePerToken = parseFloat(modelPrices[currentModelId]) || 0.000005;
     const requestCost = avgTokens * pricePerToken;
     state.count++;
     state.spent = (Number(state.spent) || 0) + requestCost;
-    localStorage.setItem('blitz_hourly_limit', JSON.stringify(state));
+    state.ts = state.ts || Date.now();
+    window.firebaseHourlyState = state;
+    if (window.firebaseUser && window.firebaseDB && window.firebaseRef && window.firebaseSet) {
+        const usageRef = window.firebaseRef(window.firebaseDB, `users/${window.firebaseUser.uid}/hourlyUsage`);
+        await window.firebaseSet(usageRef, state);
+    }
     calculateEstimatedCost(currentModelId);
     if (typeof window.blitzRefreshHourlyPanel === 'function') {
         window.blitzRefreshHourlyPanel();
