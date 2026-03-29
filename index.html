@@ -249,7 +249,7 @@
                 const safeName = document.createElement('span');
                 safeName.textContent = project.name || 'Untitled Project';
                 const creator = project.ownerUid ? userCache.get(project.ownerUid) : null;
-                const creatorName = creator?.displayName || creator?.email || 'Unknown creator';
+                const creatorName = creator?.displayName || creator?.email || shortUid(project.ownerUid);
                 const creatorLine = project.ownerUid
                     ? '<a class="project-owner-link" onclick="event.stopPropagation()" href="profile.html?user=' + encodeURIComponent(project.ownerUid) + '">by ' + escapeHtml(creatorName) + '</a>'
                     : '<span class="project-owner-muted">by Unknown creator</span>';
@@ -270,6 +270,12 @@
                 .replaceAll('>', '&gt;')
                 .replaceAll('"', '&quot;')
                 .replaceAll("'", '&#39;');
+        }
+
+        function shortUid(uid) {
+            if (!uid) return 'Unknown creator';
+            const text = String(uid);
+            return `Creator ${text.slice(0, 6)}`;
         }
 
         function getTimeAgo(ts) {
