@@ -861,6 +861,12 @@ function incrementHourlyRequests() {
     state.count++;
     localStorage.setItem('blitz_hourly_limit', JSON.stringify(state));
     calculateEstimatedCost(dropdownTrigger.dataset.value);
+    if (typeof window.blitzRefreshHourlyPanel === 'function') {
+        window.blitzRefreshHourlyPanel();
+    }
+    if (typeof window.blitzAnimateAccountDrain === 'function') {
+        window.blitzAnimateAccountDrain();
+    }
 }
 
 function getRemainingHourlyRequests(modelId) {

@@ -62,12 +62,12 @@
                                 </div>
                                 <div class="account-stat-grid">
                                     <div class="account-stat-card">
-                                        <span class="account-stat-label">Hourly Budget</span>
-                                        <strong id="account-hourly-budget">$0.03</strong>
+                                        <span class="account-stat-label">Hourly Credits</span>
+                                        <strong id="account-hourly-budget">3000</strong>
                                     </div>
                                     <div class="account-stat-card">
                                         <span class="account-stat-label">Used This Hour</span>
-                                        <strong id="account-hourly-used">$0.00</strong>
+                                        <strong id="account-hourly-used">0</strong>
                                     </div>
                                 </div>
                                 <div class="account-theme-section">
@@ -227,7 +227,9 @@
         const googleProvider = new GoogleAuthProvider();
         const db = getDatabase(app);
         const tierBudgets = { basic: 0.03, gold: 0.04, diamond: 0.05 };
+        const creditsPerCent = 1000;
         let currentUserProfile = { gifted_budget: 0, tier: 'basic' };
+        let displayedUsageCredits = 0;
         const accountTrigger = document.getElementById('account-trigger');
         const accountPanel = document.getElementById('account-panel');
         const avatar = document.getElementById('account-avatar');
@@ -308,13 +310,45 @@
             const estCost = parseFloat(localStorage.getItem('blitz_estimated_request_cost') || '0');
             const isFresh = state.ts && (Date.now() - state.ts) <= 3600000;
             const used = isFresh ? (state.count || 0) * estCost : 0;
-            return { hourlyBudget, used };
+            return {
+                hourlyBudget,
+                used,
+                hourlyCredits: Math.round(hourlyBudget * 100 * creditsPerCent),
+                usedCredits: Math.max(0, Math.round(used * 100 * creditsPerCent))
+            };
+        }
+
+        function animateUsageCredits(targetCredits) {
+            const start = displayedUsageCredits;
+            const startTime = performance.now();
+            const duration = 420;
+
+            const step = (now) => {
+                const progress = Math.min(1, (now - startTime) / duration);
+                const eased = 1 - Math.pow(1 - progress, 3);
+                displayedUsageCredits = Math.round(start + ((targetCredits - start) * eased));
+                accountUsed.textContent = displayedUsageCredits.toLocaleString();
+                if (progress < 1) {
+                    requestAnimationFrame(step);
+                } else {
+                    displayedUsageCredits = targetCredits;
+                    accountUsed.textContent = targetCredits.toLocaleString();
+                }
+            };
+
+            requestAnimationFrame(step);
+        }
+
+        function animateAccountDrain() {
+            accountTrigger.classList.remove('credit-drain');
+            void accountTrigger.offsetWidth;
+            accountTrigger.classList.add('credit-drain');
         }
 
         function refreshHourlyPanel() {
             const usage = getHourlyUsage();
-            accountBudget.textContent = `$${usage.hourlyBudget.toFixed(2)}`;
-            accountUsed.textContent = `$${usage.used.toFixed(4)}`;
+            accountBudget.textContent = usage.hourlyCredits.toLocaleString();
+            animateUsageCredits(usage.usedCredits);
         }
 
         function setAvatar(targetImg, targetFallback, user) {
@@ -361,6 +395,10 @@
             refreshHourlyPanel();
         });
 
+        accountTrigger.addEventListener('animationend', () => {
+            accountTrigger.classList.remove('credit-drain');
+        });
+
         document.addEventListener('click', (event) => {
             if (!accountPanel.contains(event.target) && !accountTrigger.contains(event.target)) {
                 accountPanel.classList.add('hidden');
@@ -370,6 +408,9 @@
         document.querySelectorAll('.theme-option').forEach(btn => {
             btn.addEventListener('click', () => applyTheme(btn.dataset.theme));
         });
+
+        window.blitzRefreshHourlyPanel = refreshHourlyPanel;
+        window.blitzAnimateAccountDrain = animateAccountDrain;
 
         saveProfileBtn.addEventListener('click', async () => {
             const user = auth.currentUser;

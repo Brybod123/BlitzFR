@@ -33,6 +33,13 @@
                 <h2 id="profile-name">Loading...</h2>
                 <p id="profile-email">Fetching creator</p>
             </div>
+            <div class="profile-actions">
+                <button id="follow-button" class="btn-create" type="button">Follow</button>
+                <div class="profile-follow-stats">
+                    <span id="profile-follower-count">0 followers</span>
+                    <span id="profile-following-count">0 following</span>
+                </div>
+            </div>
         </div>
 
         <div class="dashboard-toolbar">
@@ -44,7 +51,8 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getDatabase, get, ref } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+        import { getAuth, GoogleAuthProvider, onAuthStateChanged, signInWithPopup } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-auth.js";
+        import { getDatabase, get, ref, set, remove } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDz4P07G-B05SqCMyDdCnIyRAJNy19_1oQ",
@@ -58,9 +66,16 @@
         };
 
         const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const googleProvider = new GoogleAuthProvider();
         const db = getDatabase(app);
         const params = new URLSearchParams(window.location.search);
         const userId = params.get('user');
+        const followButton = document.getElementById('follow-button');
+        const followerCountEl = document.getElementById('profile-follower-count');
+        const followingCountEl = document.getElementById('profile-following-count');
+        let currentViewer = null;
+        let isFollowing = false;
 
         function setAvatar(imgEl, fallbackEl, user) {
             const label = (user?.displayName || user?.email || 'Unknown').trim();
@@ -91,9 +106,11 @@
                 return;
             }
 
-            const [userSnapshot, projectsSnapshot] = await Promise.all([
+            const [userSnapshot, projectsSnapshot, followersSnapshot, followingSnapshot] = await Promise.all([
                 get(ref(db, 'users/' + userId)),
-                get(ref(db, 'projects'))
+                get(ref(db, 'projects')),
+                get(ref(db, 'followers/' + userId)),
+                get(ref(db, 'following/' + userId))
             ]);
 
             const user = userSnapshot.exists() ? userSnapshot.val() : null;
@@ -104,6 +121,10 @@
                 document.getElementById('profile-avatar-fallback'),
                 user
             );
+            const followerCount = followersSnapshot.exists() ? Object.keys(followersSnapshot.val()).length : 0;
+            const followingCount = followingSnapshot.exists() ? Object.keys(followingSnapshot.val()).length : 0;
+            followerCountEl.textContent = `${followerCount} follower${followerCount === 1 ? '' : 's'}`;
+            followingCountEl.textContent = `${followingCount} following`;
 
             const allProjects = projectsSnapshot.exists() ? Object.entries(projectsSnapshot.val()).map(([id, p]) => ({ id, ...p })) : [];
             const projects = allProjects
@@ -113,6 +134,7 @@
             document.getElementById('profile-project-count').textContent = `${projects.length} found`;
 
             const grid = document.getElementById('profile-project-grid');
+            grid.innerHTML = '';
             projects.forEach(project => {
                 const card = document.createElement('div');
                 card.className = 'project-card';
@@ -121,9 +143,12 @@
                 const preview = document.createElement('div');
                 preview.className = 'project-preview';
                 if (project.thumbnail) {
-                    preview.style.backgroundImage = 'url(' + project.thumbnail + ')';
-                    preview.style.backgroundSize = 'cover';
-                    preview.style.backgroundPosition = 'center top';
+                    const thumb = document.createElement('img');
+                    thumb.className = 'project-preview-image';
+                    thumb.alt = project.name || 'Project thumbnail';
+                    thumb.loading = 'lazy';
+                    thumb.src = project.thumbnail;
+                    preview.appendChild(thumb);
                 } else {
                     preview.classList.add('skeleton');
                 }
@@ -139,6 +164,52 @@
                 grid.appendChild(card);
             });
         }
+
+        async function refreshFollowButton() {
+            if (!userId || !followButton) return;
+            if (!currentViewer) {
+                followButton.textContent = 'Sign In to Follow';
+                followButton.disabled = false;
+                return;
+            }
+            if (currentViewer.uid === userId) {
+                followButton.textContent = 'This is You';
+                followButton.disabled = true;
+                return;
+            }
+            const followSnapshot = await get(ref(db, `following/${currentViewer.uid}/${userId}`));
+            isFollowing = followSnapshot.exists();
+            followButton.textContent = isFollowing ? 'Following' : 'Follow';
+            followButton.disabled = false;
+        }
+
+        followButton.addEventListener('click', async () => {
+            if (!currentViewer) {
+                await signInWithPopup(auth, googleProvider);
+                return;
+            }
+            if (currentViewer.uid === userId) return;
+
+            followButton.disabled = true;
+            if (isFollowing) {
+                await Promise.all([
+                    remove(ref(db, `following/${currentViewer.uid}/${userId}`)),
+                    remove(ref(db, `followers/${userId}/${currentViewer.uid}`))
+                ]);
+            } else {
+                await Promise.all([
+                    set(ref(db, `following/${currentViewer.uid}/${userId}`), true),
+                    set(ref(db, `followers/${userId}/${currentViewer.uid}`), true)
+                ]);
+            }
+            await loadProfile();
+            await refreshFollowButton();
+        });
+
+        onAuthStateChanged(auth, async (user) => {
+            currentViewer = user;
+            await refreshFollowButton();
+        });
 
         loadProfile().catch((error) => {
             console.error(error);
