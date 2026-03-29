@@ -122,18 +122,6 @@
                 <h3>Create New Project</h3>
                 <p>Start a blank app</p>
             </div>
-            <div class="project-card create-new-card template-new-card" id="template-card">
-                <div class="create-icon">
-                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M4 4h16v16H4z"></path>
-                        <path d="M8 4v16"></path>
-                        <path d="M4 8h16"></path>
-                    </svg>
-                </div>
-                <span class="template-card-kicker">Template Pack</span>
-                <h3>New Project From Template</h3>
-                <p>Pick a vibe, then start building</p>
-            </div>
         </div>
     </main>
 
@@ -163,24 +151,6 @@
         </div>
     </div>
 
-    <div class="modal-overlay hidden" id="template-modal">
-        <div class="modal template-modal">
-            <div class="modal-header">
-                <h3>NEW PROJECT FROM TEMPLATE</h3>
-                <button class="modal-close" id="btn-close-template-modal">✕</button>
-            </div>
-            <div class="modal-body">
-                <div class="template-choice-list">
-                    <button type="button" class="template-choice-btn" data-template="blank">Create Blank</button>
-                    <button type="button" class="template-choice-btn" data-template="default">Default</button>
-                    <button type="button" class="template-choice-btn" data-template="liquid-glass">Liquid Glass</button>
-                    <button type="button" class="template-choice-btn" data-template="platformer">Platformer</button>
-                    <button type="button" class="template-choice-btn" data-template="clicker">Clicker Game</button>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <script src="button.js"></script>
     <script>
         // Fetch and render credits on homepage
@@ -203,21 +173,8 @@
         updateCredits();
 
         const creditsModal = document.getElementById('credits-modal');
-        const templateModal = document.getElementById('template-modal');
-        const templateCard = document.getElementById('template-card');
         document.getElementById('btn-credits-about').addEventListener('click', () => creditsModal.classList.remove('hidden'));
         document.getElementById('btn-close-credits').addEventListener('click', () => creditsModal.classList.add('hidden'));
-        document.getElementById('btn-close-template-modal').addEventListener('click', () => templateModal.classList.add('hidden'));
-        templateCard.addEventListener('click', () => templateModal.classList.remove('hidden'));
-        templateModal.querySelectorAll('.template-choice-btn').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const template = btn.dataset.template || 'default';
-                window.location.href = `editor.html?template=${encodeURIComponent(template)}`;
-            });
-        });
-        templateModal.addEventListener('click', (event) => {
-            if (event.target === templateModal) templateModal.classList.add('hidden');
-        });
     </script>
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
@@ -246,7 +203,6 @@
         const sortSelect = document.getElementById('project-sort');
         const grid = document.getElementById('project-grid');
         const createCard = grid.querySelector('.create-new-card');
-        const templateCard = grid.querySelector('.template-new-card');
         const gridToggle = document.getElementById('view-grid');
         const lineToggle = document.getElementById('view-line');
         const homeAccountTrigger = document.getElementById('home-account-trigger');
@@ -370,7 +326,6 @@
         function renderProjects() {
             grid.innerHTML = '';
             if (createCard) grid.appendChild(createCard);
-            if (templateCard) grid.appendChild(templateCard);
             grid.classList.toggle('project-list', currentViewMode === 'line');
 
             const visibleProjects = sortProjects(filterProjects(allProjects, searchInput.value), sortSelect.value);
