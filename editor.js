@@ -10,6 +10,7 @@ const fileExplorer = document.getElementById('file-explorer');
 const fileList = document.getElementById('file-list');
 const btnNewFile = document.getElementById('btn-new-file');
 const saveBtn = document.querySelector('.save-btn');
+const hostedPublishApiBase = 'https://terminal.bookitreal.workers.dev';
 
 let chatMessages = [
     {
@@ -105,6 +106,8 @@ let currentUser = window.firebaseUser || null;
 let currentProjectOwnerUid = null;
 let currentProjectId = null;
 let forkSourceProject = null;
+let currentHostedWebsite = null;
+let currentHostedSlug = null;
 
 // Create editor
 const editor = monaco.editor.create(document.getElementById('monaco-container'), {
@@ -204,7 +207,7 @@ function updateSaveButtonState() {
     }
 
     saveBtn.disabled = false;
-    saveBtn.textContent = 'SAVE';
+    saveBtn.textContent = 'PUBLISH';
     saveBtn.style.opacity = '1';
     saveBtn.style.cursor = 'pointer';
 }
@@ -255,6 +258,28 @@ function buildRenderableHtml(pageToLoad = currentPreviewPage) {
     }
 
     return { pageToLoad, htmlContent, assetUrls };
+}
+
+function buildPublishFilesPayload() {
+    const payload = {};
+    for (const [filename, fileObj] of Object.entries(files)) {
+        payload[filename] = fileObj.model.getValue();
+    }
+    return payload;
+}
+
+function slugifyProjectName(projectName) {
+    const base = String(projectName || 'blitz-project')
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 40) || 'blitz-project';
+    const suffix = Math.random().toString(36).slice(2, 8);
+    return `${base}-${suffix}`;
+}
+
+function getHostedProjectUrl(slug) {
+    return `${hostedPublishApiBase.replace(/\/$/, '')}/site/${slug}`;
 }
 
 window.addEventListener('message', (e) => {
@@ -1375,11 +1400,42 @@ async function saveProject() {
 
     const thumbnail = await captureThumbnail(projectName);
     console.log('[thumbnail] save payload thumbnail result', thumbnail ? { length: thumbnail.length } : null);
-    const fileData = serializeFiles();
+    const hostedSlug = currentHostedSlug || slugifyProjectName(projectName);
+    const publishPayload = {
+        slug: hostedSlug,
+        title: projectName,
+        entry: 'index.html',
+        files: buildPublishFilesPayload()
+    };
+
+    let publishResponse;
+    try {
+        publishResponse = await fetch(`${hostedPublishApiBase.replace(/\/$/, '')}/api/publish`, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify(publishPayload)
+        });
+    } catch (error) {
+        console.error("Publish request failed:", error);
+        alert("Publish failed: " + error.message);
+        return;
+    }
+
+    if (!publishResponse.ok) {
+        const errorText = await publishResponse.text().catch(() => '');
+        console.error("Publish failed:", publishResponse.status, errorText);
+        alert(`Publish failed: ${errorText || publishResponse.statusText}`);
+        return;
+    }
+
+    const publishData = await publishResponse.json().catch(() => ({}));
+    const hostedWebsite = publishData.url || getHostedProjectUrl(hostedSlug);
 
     const projectPayload = {
         name: projectName,
-        files: fileData,
+        hostedSlug,
+        hostedWebsite,
+        thumbnail,
         updatedAt: Date.now(),
         forkedFrom: forkSourceProject,
         ownerUid: currentUser.uid
@@ -1411,17 +1467,10 @@ async function saveProject() {
             console.log("Project created:", currentProjectId);
         }
 
-        if (thumbnail) {
-            const thumbnailRef = window.firebaseRef(window.firebaseDB, `projects/${currentProjectId}/thumbnail`);
-            await window.firebaseSet(thumbnailRef, thumbnail);
-            const thumbnailSnapshot = await window.firebaseGet(thumbnailRef);
-            console.log('[thumbnail] persisted verification', thumbnailSnapshot.exists()
-                ? { exists: true, length: String(thumbnailSnapshot.val()).length }
-                : { exists: false });
-        }
-
+        currentHostedSlug = hostedSlug;
+        currentHostedWebsite = hostedWebsite;
         updateSaveButtonState();
-        alert("Project saved!");
+        alert("Project published!");
     } catch (e) {
         console.error("Save failed:", e);
         alert("Save failed: " + e.message);
@@ -1451,6 +1500,13 @@ async function loadProject(projectId) {
         forkSourceProject = isForkLoad
             ? { id: projectId, name: data.name || 'Untitled' }
             : (data.forkedFrom || null);
+        currentHostedWebsite = data.hostedWebsite || null;
+        currentHostedSlug = data.hostedSlug || null;
+
+        if (currentHostedWebsite && !data.files) {
+            window.location.href = `viewer.html?project=${projectId}`;
+            return;
+        }
 
         // Clear existing files
         for (const name in files) {
