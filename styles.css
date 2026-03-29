@@ -1153,6 +1153,81 @@ body.editor-page {
     border-color: #4a5568;
 }
 
+.template-launcher {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.template-launcher-btn,
+.template-menu-btn,
+.template-menu-item {
+    border: none;
+    font-family: 'Jersey 10', sans-serif;
+    letter-spacing: 0.6px;
+    cursor: pointer;
+}
+
+.template-launcher-btn {
+    background: linear-gradient(135deg, #8b5cf6, #d946ef);
+    color: #fff;
+    padding: 12px 18px;
+    border-radius: 12px;
+    box-shadow: 0 10px 28px rgba(168, 85, 247, 0.25);
+    text-transform: uppercase;
+    font-size: 1.15rem;
+}
+
+.template-menu-wrap {
+    position: relative;
+}
+
+.template-menu-btn {
+    background: rgba(139, 92, 246, 0.12);
+    color: #f5d0fe;
+    border: 1px solid rgba(216, 70, 239, 0.35);
+    padding: 12px 18px;
+    border-radius: 12px;
+    text-transform: uppercase;
+    font-size: 1.15rem;
+}
+
+.template-menu {
+    position: absolute;
+    left: 0;
+    bottom: calc(100% + 10px);
+    min-width: 220px;
+    padding: 10px;
+    border-radius: 16px;
+    background: rgba(34, 16, 61, 0.96);
+    border: 1px solid rgba(168, 85, 247, 0.45);
+    box-shadow: 0 24px 48px rgba(0, 0, 0, 0.35);
+    z-index: 30;
+}
+
+.template-menu-item {
+    width: 100%;
+    display: block;
+    text-align: left;
+    padding: 12px 14px;
+    margin: 0 0 8px 0;
+    border-radius: 12px;
+    background: rgba(139, 92, 246, 0.14);
+    color: #fff;
+    font-size: 1.05rem;
+}
+
+.template-menu-item:last-child {
+    margin-bottom: 0;
+}
+
+.template-menu-item:hover,
+.template-menu-btn:hover,
+.template-launcher-btn:hover {
+    transform: translateY(-1px);
+}
+
 .publish-btn {
     background: #4a90e2;
     color: #ffffff;
