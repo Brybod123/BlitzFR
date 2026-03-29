@@ -39,7 +39,9 @@ export default async (req, context) => {
                 "kwaipilot/kat-coder-pro-v2",
                 "x-ai/grok-code-fast-1",
                 "google/gemini-3.1-flash-lite-preview",
-                "xiaomi/mimo-v2-flash"
+                "google/gemini-3-flash-preview",
+                "xiaomi/mimo-v2-flash",
+                "xiaomi/mimo-v2-pro"
             ];
 
             activityData.data.forEach(item => {
@@ -72,7 +74,9 @@ export default async (req, context) => {
             "kwaipilot/kat-coder-pro-v2",
             "x-ai/grok-code-fast-1",
             "google/gemini-3.1-flash-lite-preview",
-            "xiaomi/mimo-v2-flash"
+            "google/gemini-3-flash-preview",
+            "xiaomi/mimo-v2-flash",
+            "xiaomi/mimo-v2-pro"
         ];
         
         const prices = {};

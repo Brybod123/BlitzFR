@@ -902,7 +902,9 @@ async function updateModelStats() {
             { id: "kwaipilot/kat-coder-pro-v2", name: "KAT Coder Pro", type: "performance" },
             { id: "x-ai/grok-code-fast-1", name: "Grok-Code Fast", type: "speed" },
             { id: "google/gemini-3.1-flash-lite-preview", name: "Gemini 3.1 Flash Lite", type: "speed" },
-            { id: "xiaomi/mimo-v2-flash", name: "Mimo v2 Flash", type: "speed" }
+            { id: "google/gemini-3-flash-preview", name: "Gemini 3 Flash Preview", type: "speed" },
+            { id: "xiaomi/mimo-v2-flash", name: "Mimo v2 Flash", type: "speed" },
+            { id: "xiaomi/mimo-v2-pro", name: "Mimo v2 Pro", type: "performance" }
         ];
 
         models.forEach(m => m.price = parseFloat(modelPrices[m.id]) || 0);
