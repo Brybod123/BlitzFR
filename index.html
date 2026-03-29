@@ -27,23 +27,13 @@
         </div>
 
         <div class="header-right">
-            <div class="home-create-wrap">
-                <button class="btn-create btn-create-purple" id="btn-create-project" type="button">
+            <button class="btn-create" onclick="window.location.href='editor.html'">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                 </svg>
                 New Project
-                </button>
-                <div class="home-template-menu hidden" id="home-template-menu">
-                    <button type="button" class="home-template-item" data-template="blank">Create Blank</button>
-                    <div class="home-template-label">New from template:</div>
-                    <button type="button" class="home-template-item" data-template="default">Defualt</button>
-                    <button type="button" class="home-template-item" data-template="liquid-glass">Liquid Glass</button>
-                    <button type="button" class="home-template-item" data-template="platformer">Platformer</button>
-                    <button type="button" class="home-template-item" data-template="clicker">Clicker Game</button>
-                </div>
-            </div>
+            </button>
             <div class="credits-bar-container-mini" title="Global Credits">
                 <div class="credits-bar-wrapper mini">
                     <div id="credits-bar" class="credits-bar"></div>
@@ -132,6 +122,17 @@
                 <h3>Create New Project</h3>
                 <p>Start a blank app</p>
             </div>
+            <div class="project-card create-new-card template-new-card" onclick="window.location.href='editor.html?template=default'">
+                <div class="create-icon">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M4 4h16v16H4z"></path>
+                        <path d="M8 4v16"></path>
+                        <path d="M4 8h16"></path>
+                    </svg>
+                </div>
+                <h3>New Project From Template</h3>
+                <p>Start with a starter app</p>
+            </div>
         </div>
     </main>
 
@@ -163,25 +164,6 @@
 
     <script src="button.js"></script>
     <script>
-        const homeTemplateMenu = document.getElementById('home-template-menu');
-        const btnCreateProject = document.getElementById('btn-create-project');
-
-        btnCreateProject.addEventListener('click', (e) => {
-            e.stopPropagation();
-            homeTemplateMenu.classList.toggle('hidden');
-        });
-
-        homeTemplateMenu.querySelectorAll('.home-template-item').forEach((btn) => {
-            btn.addEventListener('click', () => {
-                const template = btn.dataset.template || 'default';
-                window.location.href = `editor.html?template=${encodeURIComponent(template)}`;
-            });
-        });
-
-        window.addEventListener('click', () => {
-            homeTemplateMenu.classList.add('hidden');
-        });
-
         // Fetch and render credits on homepage
         async function updateCredits() {
             try {

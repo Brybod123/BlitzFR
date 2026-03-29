@@ -1700,6 +1700,27 @@ body.editor-page {
     color: #ffffff;
 }
 
+.template-new-card {
+    border-color: #7c3aed;
+    box-shadow: 0 0 0 1px rgba(168, 85, 247, 0.12), 0 0 24px rgba(139, 92, 246, 0.18);
+}
+
+.template-new-card:hover {
+    border-color: #c084fc;
+    background: rgba(139, 92, 246, 0.06);
+    box-shadow: 0 0 24px rgba(168, 85, 247, 0.32);
+}
+
+.template-new-card .create-icon {
+    background: rgba(139, 92, 246, 0.18);
+    color: #d8b4fe;
+}
+
+.template-new-card:hover .create-icon {
+    background: #8b5cf6;
+    color: #ffffff;
+}
+
 .create-new-card h3 {
     margin: 0 0 4px 0;
     font-family: 'VT323', monospace;
@@ -1713,6 +1734,15 @@ body.editor-page {
     font-family: 'VT323', monospace;
     font-size: 18px;
     color: #475569;
+}
+
+.template-new-card h3 {
+    color: #f5d0fe;
+    text-shadow: 0 0 8px rgba(168, 85, 247, 0.28);
+}
+
+.template-new-card p {
+    color: #c4b5fd;
 }
 
 /* ===== PROFILE PAGE ===== */
