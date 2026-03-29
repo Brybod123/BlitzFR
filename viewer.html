@@ -157,7 +157,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-app.js";
-        import { getDatabase, ref, get } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
+        import { getDatabase, ref, get, runTransaction } from "https://www.gstatic.com/firebasejs/12.11.0/firebase-database.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyDz4P07G-B05SqCMyDdCnIyRAJNy19_1oQ",
@@ -200,10 +200,12 @@
                 hostedLink.style.display = 'none';
             } else {
                 const project = snapshot.val();
+                await incrementProjectViews(projectId);
                 const hostedWebsite = ensureTrailingSlash(project.hostedWebsite || '');
                 const name = project.name || projectId;
+                const viewCount = (Number(project.views) || 0) + 1;
 
-                projectLabel.innerHTML = `<strong>${escapeHtml(name)}</strong> · ${escapeHtml(projectId)}`;
+                projectLabel.innerHTML = `<strong>${escapeHtml(name)}</strong> · ${escapeHtml(projectId)} · ${viewCount} view${viewCount === 1 ? '' : 's'}`;
 
                 if (!hostedWebsite) {
                     emptyState.textContent = 'This project has not been published yet.';
@@ -223,6 +225,14 @@
             const trimmed = String(value).trim();
             if (!trimmed) return '';
             return trimmed.endsWith('/') ? trimmed : `${trimmed}/`;
+        }
+
+        async function incrementProjectViews(id) {
+            try {
+                await runTransaction(ref(db, `projects/${id}/views`), (current) => (Number(current) || 0) + 1);
+            } catch (error) {
+                console.error('Failed to increment project views', id, error);
+            }
         }
 
         function escapeHtml(value) {
