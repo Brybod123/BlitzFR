@@ -29,6 +29,22 @@ You can use multiple tags in one response. Always explain what you are doing.`
     }
 ];
 
+function wrapTemplateHtml(title, body) {
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${title}</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+${body}
+    <script src="script.js"></script>
+</body>
+</html>`;
+}
+
 const starterTemplates = {
     blank: {
         html: '',
@@ -36,11 +52,11 @@ const starterTemplates = {
         js: ''
     },
     default: {
-        html: `<div class="main-container">
+        html: wrapTemplateHtml('Blitz Default', `    <div class="main-container">
     <h1 class="heading">My First Blitz Website</h1>
     <p class="description">This site was built using HTML, CSS, and JS. Try editing the code on the right!</p>
     <button id="interaction-btn" class="btn">Click Me!</button>
-</div>`,
+    </div>`),
         css: `.main-container {
     display: flex;
     flex-direction: column;
@@ -84,12 +100,12 @@ btn.addEventListener('click', () => {
 });`
     },
     'liquid-glass': {
-        html: `<div class="glass-shell">
+        html: wrapTemplateHtml('Liquid Glass', `    <div class="glass-shell">
     <div class="glass-card">
         <h1>Liquid Glass</h1>
         <p>Layer frosted panels, soft shadows, and blur effects.</p>
     </div>
-</div>`,
+    </div>`),
         css: `body {
     margin: 0;
     min-height: 100vh;
@@ -116,10 +132,10 @@ btn.addEventListener('click', () => {
         js: `console.log('Liquid Glass starter loaded');`
     },
     platformer: {
-        html: `<div class="game">
+        html: wrapTemplateHtml('Platformer', `    <div class="game">
     <div class="player" id="player"></div>
     <div class="ground"></div>
-</div>`,
+    </div>`),
         css: `body {
     margin: 0;
     overflow: hidden;
@@ -163,11 +179,11 @@ document.addEventListener('keydown', (e) => {
 });`
     },
     clicker: {
-        html: `<div class="clicker-wrap">
+        html: wrapTemplateHtml('Clicker Game', `    <div class="clicker-wrap">
     <h1>Clicker Game</h1>
     <button id="click-btn">Click</button>
     <p>Score: <span id="score">0</span></p>
-</div>`,
+    </div>`),
         css: `body {
     margin: 0;
     min-height: 100vh;
