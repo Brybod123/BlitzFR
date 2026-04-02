@@ -30,24 +30,48 @@ style.textContent = `
 
         .beta-gate-card {
             width: min(100%, 420px);
-            border: 1px solid rgba(103, 232, 249, 0.22);
-            border-radius: 24px;
-            padding: 28px;
-            background: rgba(7, 12, 20, 0.94);
-            box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+            border: 2px solid #1ed8ff;
+            border-radius: 0;
+            padding: 30px;
+            background:
+                linear-gradient(180deg, rgba(4, 10, 20, 0.98), rgba(9, 15, 28, 0.96)),
+                repeating-linear-gradient(
+                    0deg,
+                    rgba(255, 255, 255, 0.02),
+                    rgba(255, 255, 255, 0.02) 1px,
+                    transparent 1px,
+                    transparent 3px
+                );
+            box-shadow: 0 0 0 2px rgba(0, 136, 255, 0.22), 0 24px 80px rgba(0, 0, 0, 0.45);
+            clip-path: polygon(
+                0 10px,
+                10px 10px,
+                10px 0,
+                calc(100% - 10px) 0,
+                calc(100% - 10px) 10px,
+                100% 10px,
+                100% calc(100% - 10px),
+                calc(100% - 10px) calc(100% - 10px),
+                calc(100% - 10px) 100%,
+                10px 100%,
+                10px calc(100% - 10px),
+                0 calc(100% - 10px)
+            );
         }
 
         .beta-gate-eyebrow {
             display: inline-flex;
             align-items: center;
             padding: 6px 10px;
-            border-radius: 999px;
-            background: rgba(34, 211, 238, 0.12);
-            color: #67e8f9;
+            border: 1px solid rgba(30, 216, 255, 0.4);
+            border-radius: 0;
+            background: rgba(0, 136, 255, 0.12);
+            color: #7cecff;
             font-size: 12px;
             font-weight: 700;
             letter-spacing: 0.08em;
             text-transform: uppercase;
+            font-family: "VT323", monospace;
         }
 
         .beta-gate h1 {
@@ -62,8 +86,9 @@ style.textContent = `
         .beta-gate p {
             margin: 0 0 18px;
             color: #a7b4c7;
-            font-size: 15px;
+            font-size: 18px;
             line-height: 1.6;
+            font-family: "VT323", monospace;
         }
 
         .beta-gate form {
@@ -79,35 +104,72 @@ style.textContent = `
 
         .beta-gate input {
             width: 100%;
-            border: 1px solid #253041;
-            border-radius: 14px;
+            border: 2px solid #2d8cff;
+            border-radius: 0;
             padding: 14px 16px;
-            background: #0f1724;
+            background: #09111c;
             color: #f8fbff;
             font: inherit;
             outline: none;
+            font-family: "VT323", monospace;
+            font-size: 24px;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            clip-path: polygon(
+                0 6px,
+                6px 6px,
+                6px 0,
+                calc(100% - 6px) 0,
+                calc(100% - 6px) 6px,
+                100% 6px,
+                100% calc(100% - 6px),
+                calc(100% - 6px) calc(100% - 6px),
+                calc(100% - 6px) 100%,
+                6px 100%,
+                6px calc(100% - 6px),
+                0 calc(100% - 6px)
+            );
         }
 
         .beta-gate input:focus {
             border-color: #67e8f9;
-            box-shadow: 0 0 0 3px rgba(103, 232, 249, 0.14);
+            box-shadow: 0 0 0 3px rgba(103, 232, 249, 0.14), 0 0 18px rgba(30, 216, 255, 0.18);
         }
 
         .beta-gate button {
             border: 0;
-            border-radius: 14px;
+            border-radius: 0;
             padding: 14px 16px;
-            background: linear-gradient(135deg, #22d3ee, #3b82f6);
-            color: #04111f;
+            background: linear-gradient(180deg, #37dfff, #128dff);
+            color: #03101f;
             font: inherit;
             font-weight: 700;
             cursor: pointer;
+            font-family: "VT323", monospace;
+            font-size: 22px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.24);
+            clip-path: polygon(
+                0 6px,
+                6px 6px,
+                6px 0,
+                calc(100% - 6px) 0,
+                calc(100% - 6px) 6px,
+                100% 6px,
+                100% calc(100% - 6px),
+                calc(100% - 6px) calc(100% - 6px),
+                calc(100% - 6px) 100%,
+                6px 100%,
+                6px calc(100% - 6px),
+                0 calc(100% - 6px)
+            );
         }
 
         .beta-gate button.beta-gate-google-btn {
-            border: 1px solid #253041;
-            background: #0f1724;
-            color: #f8fbff;
+            border: 2px solid #2d8cff;
+            background: linear-gradient(180deg, #121c2b, #0b121d);
+            color: #dff7ff;
         }
 
         .beta-gate button:disabled {
@@ -117,14 +179,16 @@ style.textContent = `
 
         .beta-gate-user {
             margin: 0 0 14px;
-            font-size: 13px;
+            font-size: 18px;
             color: #67e8f9;
+            font-family: "VT323", monospace;
         }
 
         .beta-gate-status {
             min-height: 20px;
-            font-size: 14px;
+            font-size: 18px;
             color: #fda4af;
+            font-family: "VT323", monospace;
         }
     `;
 document.head.appendChild(style);
@@ -208,7 +272,7 @@ async function handleGoogleSignIn(statusEl, userEl, button) {
 function mountGate(currentUser) {
     const signedInLine = currentUser?.email
         ? `<div class="beta-gate-user" id="beta-gate-user">Signed in as ${currentUser.email}</div>`
-        : `<div class="beta-gate-user" id="beta-gate-user">The UID ${Array.from(ALWAYS_ALLOWED_UIDS)[0]} can sign in to bypass the code.</div>`;
+        : `<div class="beta-gate-user" id="beta-gate-user">Sign in or enter your invite code to continue.</div>`;
 
     document.body.innerHTML = `
             <main class="beta-gate" id="beta-gate">
