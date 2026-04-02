@@ -1,0 +1,7 @@
+{
+  "name": "blitzfr-main",
+  "private": true,
+  "dependencies": {
+    "@netlify/blobs": "^9.0.4"
+  }
+}
