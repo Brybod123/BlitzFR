@@ -113,6 +113,7 @@ let currentProjectId = null;
 let forkSourceProject = null;
 let currentHostedWebsite = null;
 let currentHostedSlug = null;
+const mobileEditorQuery = window.matchMedia('(max-width: 760px)');
 
 // Create editor
 const editor = monaco.editor.create(document.getElementById('monaco-container'), {
@@ -158,6 +159,22 @@ function setEditorPaneCollapsed(collapsed) {
         document.body.classList.remove('pane-transitioning');
         editor.layout();
     }, 420);
+}
+
+function syncMobileEditorLayout() {
+    if (!mobileEditorQuery.matches) {
+        btnRestoreEditorPane.classList.remove('is-visible');
+        return;
+    }
+
+    if (!editorContainer.classList.contains('editor-collapsed')) {
+        setEditorPaneCollapsed(true);
+    }
+
+    if (!fileExplorer.classList.contains('hidden')) {
+        fileExplorer.classList.add('hidden');
+        btnFileExplorer.classList.remove('active');
+    }
 }
 
 window.blitzApplyTheme = (theme) => {
@@ -491,6 +508,13 @@ btnToggleEditorPane.addEventListener('click', () => {
     setEditorPaneCollapsed(nextState);
 });
 btnRestoreEditorPane.addEventListener('click', () => setEditorPaneCollapsed(false));
+mobileEditorQuery.addEventListener('change', syncMobileEditorLayout);
+window.addEventListener('resize', () => {
+    if (!mobileEditorQuery.matches) {
+        editor.layout();
+    }
+});
+syncMobileEditorLayout();
 
 // Helper for AI File Editing
 function applyFileEdit(filename, search, replace) {

@@ -1960,3 +1960,340 @@ body.profile-page .project-card {
         grid-template-columns: 1fr;
     }
 }
+
+@media (max-width: 1100px) {
+    .editor-container {
+        grid-template-columns: minmax(0, 1.15fr) minmax(340px, 0.85fr);
+    }
+
+    .editor-header {
+        flex-wrap: wrap;
+        align-items: flex-start;
+    }
+
+    .nav-center {
+        order: 3;
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .header-utility-row {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .dashboard-header {
+        height: auto;
+        min-height: 64px;
+        padding: 14px 20px;
+        gap: 14px;
+        flex-wrap: wrap;
+    }
+
+    .header-center {
+        order: 3;
+        max-width: none;
+        width: 100%;
+        margin: 0;
+    }
+
+    .header-right {
+        flex-wrap: wrap;
+        justify-content: flex-end;
+    }
+
+    .dashboard-main {
+        padding: 28px 28px 40px;
+    }
+
+    .dashboard-toolbar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .toolbar-actions {
+        width: 100%;
+        flex-wrap: wrap;
+    }
+}
+
+@media (max-width: 760px) {
+    body.editor-page {
+        height: auto;
+        min-height: 100vh;
+        overflow: auto;
+    }
+
+    .editor-container {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+    }
+
+    .preview-side {
+        order: 2;
+        min-height: 46vh;
+        border-right: none;
+        border-top: 1px solid rgba(0, 136, 255, 0.2);
+    }
+
+    .preview-side iframe {
+        min-height: 46vh;
+    }
+
+    .editor-side {
+        order: 1;
+        padding: 1rem;
+        overflow: visible;
+    }
+
+    .editor-container.editor-collapsed {
+        display: block;
+    }
+
+    .editor-container.editor-collapsed .preview-side {
+        min-height: 100dvh;
+        border-top: none;
+    }
+
+    .editor-container.editor-collapsed .preview-side iframe {
+        min-height: 100dvh;
+    }
+
+    .editor-container.editor-collapsed .editor-side {
+        display: none;
+    }
+
+    .editor-header {
+        gap: 0.75rem;
+    }
+
+    .header-utility-row {
+        width: 100%;
+        justify-content: flex-start;
+        gap: 0.6rem;
+    }
+
+    .main-toggles,
+    .toggle-group {
+        width: 100%;
+    }
+
+    .toggle-btn {
+        flex: 1;
+    }
+
+    .panel-toggle-btn,
+    .icon-nav-btn,
+    .cost-estimate-label,
+    .hourly-limit-label {
+        width: 100%;
+    }
+
+    .cost-estimate-label,
+    .hourly-limit-label {
+        justify-content: center;
+        text-align: center;
+    }
+
+    .file-explorer {
+        width: 100%;
+        min-width: 0;
+        max-height: 220px;
+        border-right: none;
+        border-bottom: 1px solid #232730;
+    }
+
+    .code-layout {
+        flex-direction: column;
+    }
+
+    .account-panel {
+        position: fixed;
+        top: 72px;
+        left: 12px;
+        right: 12px;
+        width: auto;
+        max-height: calc(100dvh - 96px);
+        overflow: auto;
+    }
+
+    .dashboard-header {
+        padding: 14px 16px;
+        align-items: stretch;
+    }
+
+    .header-left,
+    .header-right {
+        width: 100%;
+    }
+
+    .header-right {
+        justify-content: flex-start;
+        gap: 10px;
+    }
+
+    .btn-create {
+        width: 100%;
+        justify-content: center;
+        min-height: 44px;
+    }
+
+    .search-bar {
+        font-size: 20px;
+        padding: 12px 14px;
+    }
+
+    .dashboard-main {
+        padding: 20px 16px 32px;
+    }
+
+    .dashboard-toolbar h2 {
+        font-size: 24px;
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 6px;
+    }
+
+    .toolbar-actions {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+    }
+
+    .dashboard-select,
+    .view-toggles {
+        width: 100%;
+    }
+
+    .view-toggles {
+        justify-content: space-between;
+    }
+
+    .view-toggles .icon-btn {
+        flex: 1;
+    }
+
+    .project-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .project-grid.project-list .project-card {
+        flex-direction: column;
+        min-height: 0;
+    }
+
+    .project-grid.project-list .project-preview {
+        width: 100%;
+        min-width: 0;
+        height: 160px;
+        border-right: 0;
+        border-bottom: 2px solid #30363d;
+    }
+
+    .project-info {
+        padding: 14px;
+    }
+
+    .create-new-card {
+        min-height: 180px;
+    }
+
+    .profile-hero {
+        align-items: flex-start;
+        gap: 14px;
+    }
+
+    .profile-hero h2 {
+        font-size: 2.1rem;
+    }
+
+    .profile-actions {
+        width: 100%;
+        margin-left: 0;
+        align-items: stretch;
+    }
+
+    .profile-follow-stats {
+        justify-content: space-between;
+        flex-wrap: wrap;
+        gap: 8px 14px;
+    }
+
+    .dashboard-stat-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+
+    .dashboard-list-item {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+}
+
+@media (max-width: 480px) {
+    .dashboard-logo {
+        height: 28px;
+    }
+
+    .dashboard-header h1 {
+        font-size: 1.8rem !important;
+    }
+
+    .dashboard-main {
+        padding: 18px 12px 28px;
+    }
+
+    .dashboard-toolbar h2 {
+        font-size: 22px;
+    }
+
+    .project-preview,
+    .project-grid.project-list .project-preview {
+        height: 140px;
+    }
+
+    .project-info h3 {
+        font-size: 20px;
+    }
+
+    .project-info p,
+    .project-source-line,
+    .create-new-card p {
+        font-size: 15px;
+    }
+
+    .create-new-card h3 {
+        font-size: 20px;
+    }
+
+    .dashboard-stat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-stat-card strong {
+        font-size: 1.7rem;
+    }
+
+    .profile-hero h2 {
+        font-size: 1.8rem;
+    }
+
+    .profile-hero p,
+    .profile-follow-stats {
+        font-size: 1.05rem;
+    }
+
+    .account-stat-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .preview-restore-btn {
+        top: 12px;
+        right: 12px;
+        padding-right: 10px;
+    }
+}
