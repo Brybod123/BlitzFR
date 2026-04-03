@@ -18,14 +18,9 @@ const saveBtn = document.querySelector('.save-btn');
 const mobileEditorNavBtns = document.querySelectorAll('.mobile-editor-nav-btn');
 const hostedPublishApiBase = 'https://terminal.bookitreal.workers.dev';
 const loadingAssetPath = 'loading.svg';
-const smartSuggestionModelId = 'qwen/qwen3.6-plus:free';
 let editorPaneTransitionTimer = null;
 let mobileEditorMode = 'code';
 const saveButtonDefaultHtml = saveBtn ? saveBtn.innerHTML : 'PUBLISH';
-const suggestionCache = new Map();
-const SUGGESTION_COOLDOWN_MS = 2200;
-let lastSuggestionRequestAt = 0;
-let suggestionTriggerTimer = null;
 
 let chatMessages = [
     {
@@ -131,12 +126,7 @@ const editor = monaco.editor.create(document.getElementById('monaco-container'),
     automaticLayout: true,
     minimap: { enabled: false },
     fontSize: 14,
-    fontFamily: 'ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
-    inlineSuggest: {
-        enabled: true,
-        mode: 'subword',
-        showToolbar: 'onHover'
-    }
+    fontFamily: 'ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace'
 });
 
 // Setup Diff Editor
@@ -335,117 +325,6 @@ function setSaveButtonLoading(isLoading, label = 'Publishing') {
     saveBtn.disabled = false;
     updateSaveButtonState();
 }
-
-function getSuggestionContext(model, position) {
-    const fullText = model.getValue();
-    const offset = model.getOffsetAt(position);
-    return {
-        beforeCursor: fullText.slice(0, offset),
-        afterCursor: fullText.slice(offset)
-    };
-}
-
-function getSuggestionCacheKey(model, position) {
-    const { beforeCursor, afterCursor } = getSuggestionContext(model, position);
-    return JSON.stringify({
-        fileName: activeFile,
-        language: files[activeFile]?.lang || model.getLanguageId(),
-        beforeCursor: beforeCursor.slice(-600),
-        afterCursor: afterCursor.slice(0, 200)
-    });
-}
-
-async function fetchSmartSuggestion(model, position) {
-    const fileName = activeFile;
-    const language = files[fileName]?.lang || model.getLanguageId();
-    const { beforeCursor, afterCursor } = getSuggestionContext(model, position);
-    const cacheKey = getSuggestionCacheKey(model, position);
-    const cached = suggestionCache.get(cacheKey);
-
-    if (cached && (Date.now() - cached.ts) < 15000) {
-        return cached.text;
-    }
-
-    const response = await fetch('/api/suggest', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-            fileName,
-            language,
-            beforeCursor,
-            afterCursor,
-            model: smartSuggestionModelId
-        })
-    });
-
-    if (!response.ok) {
-        throw new Error('Suggestion request failed');
-    }
-
-    const data = await response.json();
-    const text = String(data?.suggestion || '').replace(/^\s*\n+/, '\n');
-    suggestionCache.set(cacheKey, { text, ts: Date.now() });
-    return text;
-}
-
-function scheduleInlineSuggestionTrigger() {
-    if (codeView.classList.contains('hidden')) return;
-    if (mobileEditorQuery.matches && mobileEditorMode !== 'code') return;
-
-    window.clearTimeout(suggestionTriggerTimer);
-    suggestionTriggerTimer = window.setTimeout(() => {
-        if (codeView.classList.contains('hidden')) return;
-        if (mobileEditorQuery.matches && mobileEditorMode !== 'code') return;
-        editor.trigger('blitz-inline-suggest', 'editor.action.inlineSuggest.trigger', {});
-    }, SUGGESTION_COOLDOWN_MS);
-}
-
-const inlineLanguages = ['html', 'css', 'javascript'];
-inlineLanguages.forEach((languageId) => {
-    monaco.languages.registerInlineCompletionsProvider(languageId, {
-        provideInlineCompletions: async (model, position, context, token) => {
-            if (token.isCancellationRequested) return { items: [] };
-            if (mobileEditorQuery.matches && mobileEditorMode !== 'code') return { items: [] };
-            if (codeView.classList.contains('hidden')) return { items: [] };
-            if (model !== editor.getModel()) return { items: [] };
-            if (context?.selectedSuggestionInfo) return { items: [] };
-
-            const linePrefix = model.getLineContent(position.lineNumber).slice(0, position.column - 1);
-            if (!linePrefix.trim()) return { items: [] };
-
-            const cacheKey = getSuggestionCacheKey(model, position);
-            const cached = suggestionCache.get(cacheKey);
-            if (!cached && (Date.now() - lastSuggestionRequestAt) < SUGGESTION_COOLDOWN_MS) {
-                return { items: [] };
-            }
-
-            try {
-                lastSuggestionRequestAt = Date.now();
-                const suggestion = await fetchSmartSuggestion(model, position);
-                if (token.isCancellationRequested || !suggestion.trim()) {
-                    return { items: [] };
-                }
-
-                return {
-                    items: [{
-                        insertText: suggestion,
-                        range: new monaco.Range(
-                            position.lineNumber,
-                            position.column,
-                            position.lineNumber,
-                            position.column
-                        )
-                    }]
-                };
-            } catch (error) {
-                return { items: [] };
-            }
-        },
-        freeInlineCompletions() {
-            // Monaco handles cleanup for plain text suggestions here.
-        }
-    });
-});
 
 window.addEventListener('firebase-auth-ready', () => {
     currentUser = window.firebaseUser || null;
