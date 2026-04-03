@@ -34,6 +34,7 @@ let pythonTerminalBuffer = '';
 let pythonTerminalHistory = [];
 let pythonTerminalHistoryIndex = -1;
 let pythonTerminalBusy = false;
+let pythonTerminalMinimized = true;
 const saveButtonDefaultHtml = saveBtn ? saveBtn.innerHTML : 'PUBLISH';
 
 let chatMessages = [
@@ -191,6 +192,7 @@ function setPreviewMode(mode, source = 'user') {
     if (previewMode === 'python') {
         pythonPreviewOutput.classList.remove('hidden');
         previewSide.classList.add('python-overlay-open');
+        pythonPreviewOutput.classList.toggle('is-minimized', pythonTerminalMinimized);
         void ensurePythonTerminal();
         void updatePythonPreview();
     } else {
@@ -237,7 +239,12 @@ async function ensurePythonTerminal() {
         <div class="python-terminal-shell">
             <div class="python-terminal-toolbar">
                 <div class="python-terminal-title">Python Shell</div>
-                <div class="python-terminal-hint">Commands: <code>run</code>, <code>list</code>, <code>make name.py</code>, <code>remove name.py</code>, <code>help</code></div>
+                <div class="python-terminal-actions">
+                    <button class="python-terminal-action" data-python-action="run" type="button">Run</button>
+                    <button class="python-terminal-action" data-python-action="list" type="button">List</button>
+                    <button class="python-terminal-action" data-python-action="clear" type="button">Clear</button>
+                    <button class="python-terminal-action" data-python-action="close" type="button">Hide</button>
+                </div>
             </div>
             <div class="python-terminal-body"><div id="python-terminal-host"></div></div>
         </div>
@@ -267,7 +274,7 @@ async function ensurePythonTerminal() {
 
     pythonTerminal.open(terminalHost);
     pythonTerminal.writeln('Blitz Python shell ready.');
-    pythonTerminal.writeln('Type "help" for commands.');
+    pythonTerminal.writeln('Commands: run, list, make, remove, clear, help.');
     pythonTerminal.prompt = () => {
         pythonTerminal.write(`\r\n${pythonTerminalPrompt}`);
         pythonTerminalBuffer = '';
@@ -322,6 +329,31 @@ async function ensurePythonTerminal() {
 
     pythonTerminal.prompt();
     pythonTerminalReady = true;
+    pythonPreviewOutput.querySelectorAll('[data-python-action]').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+            const action = btn.dataset.pythonAction;
+            if (action === 'close') {
+                pythonTerminalMinimized = true;
+                pythonPreviewOutput.classList.add('is-minimized');
+                return;
+            }
+            if (action === 'run') {
+                pythonTerminal.writeln('\r\nRunning Python...');
+                pythonTerminal.writeln(await runPythonSource());
+                pythonTerminal.prompt();
+                return;
+            }
+            if (action === 'list') {
+                pythonTerminal.writeln('\r\n' + (listVirtualFiles() || '(no files)'));
+                pythonTerminal.prompt();
+                return;
+            }
+            if (action === 'clear') {
+                pythonTerminal.clear();
+                pythonTerminal.prompt();
+            }
+        });
+    });
     window.addEventListener('resize', () => pythonFitAddon?.fit?.());
     setTimeout(() => pythonFitAddon?.fit?.(), 0);
 }
