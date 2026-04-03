@@ -31,7 +31,14 @@ function cleanupSuggestion(text, beforeCursor = '') {
         suggestion = suggestion.slice(currentLinePrefix.length);
     }
 
-    return suggestion.replace(/^\n{3,}/, '\n\n');
+    suggestion = suggestion.replace(/^\n{3,}/, '\n\n');
+
+    // Inline ghost text is much more reliable when it starts with a visible token.
+    if (/^\s*\n/.test(suggestion)) {
+        suggestion = suggestion.trimStart();
+    }
+
+    return suggestion;
 }
 
 function getIndentation(beforeCursor = '') {

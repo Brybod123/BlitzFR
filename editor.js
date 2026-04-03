@@ -585,7 +585,7 @@ function bindContentChange(model) {
 
 Object.values(files).forEach(f => bindContentChange(f.model));
 updatePreview();
-editor.onDidChangeModelContent(() => {
+editor.onDidType(() => {
     scheduleInlineSuggestionTrigger();
 });
 
