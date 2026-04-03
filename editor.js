@@ -405,7 +405,20 @@ async function runPythonSource() {
     pyodide.setStderr({ batched: (text) => output.push(text) });
 
     try {
-        await pyodide.runPythonAsync(source);
+        const wrappedSource = `
+import builtins
+
+def _blitz_input(prompt=''):
+    if prompt:
+        print(prompt, end='')
+    print('[Blitz Python] input() is not interactive here. Returning an empty string.')
+    return ''
+
+builtins.input = _blitz_input
+
+${source}
+`;
+        await pyodide.runPythonAsync(wrappedSource);
     } catch (error) {
         output.push(String(error?.message || error));
     }
