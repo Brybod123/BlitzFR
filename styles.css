@@ -239,11 +239,19 @@ body.editor-page {
 }
 
 .python-preview-output {
-    flex: 1;
-    overflow: auto;
+    position: absolute;
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    height: min(34vh, 260px);
+    overflow: hidden;
     padding: 0;
     background: #0b0f14;
     color: #d8f3ff;
+    border: 1px solid rgba(0, 136, 255, 0.3);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.35);
+    z-index: 7;
+    border-radius: 12px;
 }
 
 .python-terminal-shell {
@@ -286,6 +294,10 @@ body.editor-page {
 
 .python-terminal-body .xterm {
     height: 100%;
+}
+
+.preview-side.python-overlay-open .preview-mode-switcher {
+    background: rgba(7, 11, 18, 0.95);
 }
 
 .python-preview-empty,

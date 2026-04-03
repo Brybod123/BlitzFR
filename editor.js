@@ -189,13 +189,13 @@ function setPreviewMode(mode, source = 'user') {
     });
 
     if (previewMode === 'python') {
-        previewFrame.classList.add('hidden');
         pythonPreviewOutput.classList.remove('hidden');
+        previewSide.classList.add('python-overlay-open');
         void ensurePythonTerminal();
         void updatePythonPreview();
     } else {
         pythonPreviewOutput.classList.add('hidden');
-        previewFrame.classList.remove('hidden');
+        previewSide.classList.remove('python-overlay-open');
         if (source !== 'python-run') {
             updatePreview();
         }
