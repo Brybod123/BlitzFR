@@ -17,6 +17,9 @@ const pythonPreviewOutput = document.getElementById('python-preview-output');
 const btnToggleEditorPane = document.getElementById('btn-toggle-editor-pane');
 const btnRestoreEditorPane = document.getElementById('btn-restore-editor-pane');
 const saveBtn = document.querySelector('.save-btn');
+const commandPalette = document.getElementById('command-palette');
+const commandPaletteInput = document.getElementById('command-palette-input');
+const commandPaletteList = document.getElementById('command-palette-list');
 const mobileEditorNavBtns = document.querySelectorAll('.mobile-editor-nav-btn');
 const hostedPublishApiBase = 'https://terminal.bookitreal.workers.dev';
 const loadingAssetPath = 'loading.svg';
@@ -34,6 +37,9 @@ let pythonTerminalBuffer = '';
 let pythonTerminalHistory = [];
 let pythonTerminalHistoryIndex = -1;
 let pythonTerminalBusy = false;
+let commandPaletteOpen = false;
+let commandPaletteItems = [];
+let commandPaletteActiveIndex = 0;
 const saveButtonDefaultHtml = saveBtn ? saveBtn.innerHTML : 'PUBLISH';
 
 let chatMessages = [
@@ -210,6 +216,177 @@ previewModeBtns.forEach((btn) => {
     btn.addEventListener('click', () => {
         setPreviewMode(btn.dataset.previewMode || 'html');
     });
+});
+
+function isEditableTarget(target) {
+    if (!target) return false;
+    if (target.closest('.monaco-editor')) return true;
+    if (target.closest('[contenteditable="true"]')) return true;
+    return /^(INPUT|TEXTAREA|SELECT)$/.test(target.tagName);
+}
+
+function closeCommandPalette() {
+    commandPaletteOpen = false;
+    commandPalette.classList.add('hidden');
+    commandPalette.setAttribute('aria-hidden', 'true');
+}
+
+function openCommandPalette() {
+    commandPaletteOpen = true;
+    commandPalette.classList.remove('hidden');
+    commandPalette.setAttribute('aria-hidden', 'false');
+    renderCommandPalette(commandPaletteInput?.value || '');
+    setTimeout(() => commandPaletteInput?.focus(), 0);
+}
+
+function runPaletteCommand(id) {
+    const actions = {
+        'toggle-code': () => {
+            toggleBtns[0]?.click();
+            closeCommandPalette();
+        },
+        'toggle-ai': () => {
+            toggleBtns[1]?.click();
+            closeCommandPalette();
+        },
+        'focus-preview': () => {
+            btnToggleEditorPane?.click();
+            closeCommandPalette();
+        },
+        'publish': () => {
+            saveBtn?.click();
+            closeCommandPalette();
+        },
+        'new-file': () => {
+            btnNewFile?.click();
+            closeCommandPalette();
+        },
+        'list-files': () => {
+            btnFileExplorer?.click();
+            closeCommandPalette();
+        },
+        'html-preview': () => {
+            setPreviewMode('html');
+            closeCommandPalette();
+        },
+        'python-preview': () => {
+            setPreviewMode('python');
+            closeCommandPalette();
+        },
+        'run-python': () => {
+            setPreviewMode('python');
+            if (!pythonTerminalReady) {
+                void ensurePythonTerminal().then(() => {
+                    pythonTerminal?.writeln('\r\nRunning Python...');
+                    void runPythonSource().then((result) => {
+                        pythonTerminal?.writeln(result);
+                    });
+                });
+            } else {
+                pythonTerminal?.writeln('\r\nRunning Python...');
+                void runPythonSource().then((result) => {
+                    pythonTerminal?.writeln(result);
+                });
+            }
+            closeCommandPalette();
+        }
+    };
+
+    if (actions[id]) actions[id]();
+}
+
+function renderCommandPalette(query = '') {
+    const items = [
+        { id: 'toggle-code', title: 'Switch to Code', hint: 'Show the code editor' },
+        { id: 'toggle-ai', title: 'Switch to AI', hint: 'Open the AI chat panel' },
+        { id: 'focus-preview', title: 'Focus Preview', hint: 'Collapse code and center the preview' },
+        { id: 'html-preview', title: 'HTML Preview', hint: 'Show the browser preview' },
+        { id: 'python-preview', title: 'Python Preview', hint: 'Open the Python runner' },
+        { id: 'run-python', title: 'Run Python', hint: 'Execute the active .py file' },
+        { id: 'new-file', title: 'New File', hint: 'Create a new file' },
+        { id: 'list-files', title: 'File Explorer', hint: 'Toggle the file explorer' },
+        { id: 'publish', title: 'Publish', hint: 'Upload and host the project' }
+    ];
+
+    const filtered = items.filter((item) => {
+        const haystack = `${item.title} ${item.hint}`.toLowerCase();
+        return haystack.includes(query.trim().toLowerCase());
+    });
+
+    commandPaletteItems = filtered;
+    commandPaletteActiveIndex = Math.min(commandPaletteActiveIndex, Math.max(filtered.length - 1, 0));
+    commandPaletteList.innerHTML = '';
+
+    filtered.forEach((item, index) => {
+        const row = document.createElement('button');
+        row.type = 'button';
+        row.className = `command-item ${index === commandPaletteActiveIndex ? 'active' : ''}`;
+        row.dataset.commandId = item.id;
+        row.innerHTML = `<span class="command-item-title">${item.title}</span><span class="command-item-hint">${item.hint}</span>`;
+        row.addEventListener('click', () => runPaletteCommand(item.id));
+        commandPaletteList.appendChild(row);
+    });
+}
+
+window.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape' && commandPaletteOpen) {
+        event.preventDefault();
+        closeCommandPalette();
+        return;
+    }
+
+    if (commandPaletteOpen) {
+        if (event.key === 'ArrowDown') {
+            event.preventDefault();
+            commandPaletteActiveIndex = Math.min(commandPaletteActiveIndex + 1, Math.max(commandPaletteItems.length - 1, 0));
+            renderCommandPalette(commandPaletteInput.value);
+        } else if (event.key === 'ArrowUp') {
+            event.preventDefault();
+            commandPaletteActiveIndex = Math.max(commandPaletteActiveIndex - 1, 0);
+            renderCommandPalette(commandPaletteInput.value);
+        } else if (event.key === 'Enter') {
+            event.preventDefault();
+            const active = commandPaletteItems[commandPaletteActiveIndex];
+            if (active) runPaletteCommand(active.id);
+        }
+        return;
+    }
+
+    if (event.shiftKey && (event.key === 'C' || event.key === 'c')) {
+        if (isEditableTarget(event.target) || document.activeElement === commandPaletteInput) {
+            return;
+        }
+        event.preventDefault();
+        openCommandPalette();
+    }
+});
+
+commandPalette.addEventListener('click', (event) => {
+    if (event.target === commandPalette) closeCommandPalette();
+});
+
+commandPaletteInput.addEventListener('input', () => {
+    commandPaletteActiveIndex = 0;
+    renderCommandPalette(commandPaletteInput.value);
+});
+
+commandPaletteInput.addEventListener('keydown', (event) => {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        const active = commandPaletteItems[commandPaletteActiveIndex];
+        if (active) runPaletteCommand(active.id);
+    } else if (event.key === 'Escape') {
+        event.preventDefault();
+        closeCommandPalette();
+    } else if (event.key === 'ArrowDown') {
+        event.preventDefault();
+        commandPaletteActiveIndex = Math.min(commandPaletteActiveIndex + 1, Math.max(commandPaletteItems.length - 1, 0));
+        renderCommandPalette(commandPaletteInput.value);
+    } else if (event.key === 'ArrowUp') {
+        event.preventDefault();
+        commandPaletteActiveIndex = Math.max(commandPaletteActiveIndex - 1, 0);
+        renderCommandPalette(commandPaletteInput.value);
+    }
 });
 
 async function loadPyodideRuntime() {

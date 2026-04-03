@@ -220,6 +220,13 @@
         <button class="save-btn">PUBLISH</button>
     </div>
 
+    <div id="command-palette" class="command-palette hidden" aria-hidden="true">
+        <div class="command-palette-panel" role="dialog" aria-modal="true" aria-label="Command palette">
+            <input id="command-palette-input" class="command-palette-input" type="text" placeholder="Type a command..." autocomplete="off">
+            <div id="command-palette-list" class="command-palette-list"></div>
+        </div>
+    </div>
+
     <nav class="mobile-editor-nav" aria-label="Mobile editor navigation">
         <button class="mobile-editor-nav-btn active" data-mobile-panel="code" type="button">Code</button>
         <button class="mobile-editor-nav-btn" data-mobile-panel="preview" type="button">Preview</button>

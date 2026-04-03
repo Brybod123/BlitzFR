@@ -1537,6 +1537,86 @@ body.pane-transitioning .panel-toggle-icon {
     );
 }
 
+.command-palette {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 12vh 16px 16px;
+    background: rgba(0, 0, 0, 0.42);
+    backdrop-filter: blur(10px);
+}
+
+.command-palette.hidden {
+    display: none;
+}
+
+.command-palette-panel {
+    width: min(680px, 100%);
+    background: #0b0f14;
+    border: 1px solid rgba(0, 136, 255, 0.28);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+    padding: 12px;
+    clip-path: polygon(
+        0 10px, 10px 10px, 10px 0,
+        calc(100% - 10px) 0, calc(100% - 10px) 10px, 100% 10px,
+        100% calc(100% - 10px), calc(100% - 10px) calc(100% - 10px), calc(100% - 10px) 100%,
+        10px 100%, 10px calc(100% - 10px), 0 calc(100% - 10px)
+    );
+}
+
+.command-palette-input {
+    width: 100%;
+    background: #11151c;
+    border: 1px solid #2d3748;
+    color: #e2e8f0;
+    font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 16px;
+    padding: 12px 14px;
+    outline: none;
+    margin-bottom: 12px;
+}
+
+.command-palette-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-height: min(44vh, 420px);
+    overflow: auto;
+}
+
+.command-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 12px;
+    border: 1px solid rgba(45, 55, 72, 0.9);
+    background: rgba(17, 21, 28, 0.88);
+    color: #cbd5e1;
+    cursor: pointer;
+}
+
+.command-item.active {
+    border-color: #00ffff;
+    color: #ffffff;
+    background: rgba(14, 42, 68, 0.92);
+}
+
+.command-item-title {
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    letter-spacing: 0.03em;
+}
+
+.command-item-hint {
+    color: #94a3b8;
+    font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+}
+
 .mobile-editor-nav {
     display: none;
 }
