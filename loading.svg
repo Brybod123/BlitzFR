@@ -1,0 +1,119 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="100%" height="100%">
+  <defs>
+    <!-- Animation Styles -->
+    <style>
+      .block {
+        transform-box: fill-box;
+        transform-origin: center;
+        /* Increased duration to 10 seconds */
+        animation-duration: 10s;
+        /* Buttery smooth easing for a fluid, floating effect */
+        animation-timing-function: ease-in-out;
+        animation-iteration-count: infinite;
+      }
+      
+      /* Map each block to an exclusive random sequence */
+      .blk1 { animation-name: b1; } .blk2 { animation-name: b2; }
+      .blk3 { animation-name: b3; } .blk4 { animation-name: b4; }
+      .blk5 { animation-name: b5; } .blk6 { animation-name: b6; }
+      .blk7 { animation-name: b7; } .blk8 { animation-name: b8; }
+      .blk9 { animation-name: b9; } .blk10{ animation-name: b10;}
+      .blk11{ animation-name: b11;} .blk12{ animation-name: b12;}
+      .blk13{ animation-name: b13;} .blk14{ animation-name: b14;}
+
+      /* 
+        Smoother keyframes: 
+        0% -> 15% and 85% -> 100% hold the regular logo shape (3 seconds total).
+        Between 15% and 85%, they smoothly wander to 3 different positions.
+      */
+      @keyframes b1 { 0%, 15%, 85%, 100% { transform: translate(0px, 0px); opacity: 1; } 35% { transform: translate(-32px, 48px); opacity: 0.6; } 50% { transform: translate(64px, 16px); opacity: 0.3; } 65% { transform: translate(32px, 64px); opacity: 0.8; } }
+      @keyframes b2 { 0%, 15%, 85%, 100% { transform: translate(0px, 0px); opacity: 1; } 35% { transform: translate(48px, 16px); opacity: 0.5; } 50% { transform: translate(-32px, -16px); opacity: 0.8; } 65% { transform: translate(64px, -32px); opacity: 0.5; } }
+      @keyframes b3 { 0%, 15%, 85%, 100% { transform: translate(0px, 0px); opacity: 1; } 35% { transform: translate(16px, -32px); opacity: 0.8; } 50% { transform: translate(32px, 48px); opacity: 0.4; } 65% { transform: translate(80px, 16px); opacity: 0.7; } }
+      @keyframes b4 { 0%, 15%, 85%, 100% { transform: translate(0px, 0px); opacity: 1; } 35% { transform: translate(-32px, -32px); opacity: 0.5; } 50% { transform: translate(-16px, 64px); opacity: 0.9; } 65% { transform: translate(48px, -16px); opacity: 0.4; } }
+      @keyframes b5 { 0%, 15%, 85%, 100% { transform: translate(0px, 0px); opacity: 1; } 35% { transform: translate(48px, 32px); opacity: 0.9; } 50% { transform: translate(-48px, 48px); opacity: 0.5; } 65% { transform: translate(-16px, -48px); opacity: 0.8; } }
+      @keyframes b6 { 0%, 15%, 85%, 100% { transform: translate(0px, 0px); opacity: 1; } 35% { transform: translate(-16px, 64px); opacity: 0.4; } 50% { transform: translate(32px, -32px); opacity: 0.7; } 65% { transform: translate(-32px, 48px); opacity: 0.9; } }
+      @keyframes b7 { 0%, 15%, 85%, 100% { transform: translate(0px, 0px); opacity: 1; } 35% { transform: translate(32px, -64px); opacity: 0.8; } 50% { transform: translate(-16px, -32px); opacity: 0.4; } 65% { transform: translate(48px, 32px); opacity: 0.6; } }
+      @keyframes b8 { 0%, 15%, 85%, 100% { transform: translate(0px, 0px); opacity: 1; } 35% { transform: translate(-64px, 32px); opacity: 0.6; } 50% { transform: translate(48px, -16px); opacity: 0.9; } 65% { transform: translate(-16px, 64px); opacity: 0.5; } }
+      @keyframes b9 { 0%, 15%, 85%, 100% { transform: translate(0px, 0px); opacity: 1; } 35% { transform: translate(48px, -16px); opacity: 0.5; } 50% { transform: translate(16px, -48px); opacity: 0.8; } 65% { transform: translate(64px, 16px); opacity: 0.7; } }
+      @keyframes b10{ 0%, 15%, 85%, 100% { transform: translate(0px, 0px); opacity: 1; } 35% { transform: translate(-32px, -64px); opacity: 0.9; } 50% { transform: translate(32px, 16px); opacity: 0.5; } 65% { transform: translate(-48px, -16px); opacity: 0.7; } }
+      @keyframes b11{ 0%, 15%, 85%, 100% { transform: translate(0px, 0px); opacity: 1; } 35% { transform: translate(-16px, 32px); opacity: 0.6; } 50% { transform: translate(32px, -64px); opacity: 0.9; } 65% { transform: translate(16px, -16px); opacity: 0.8; } }
+      @keyframes b12{ 0%, 15%, 85%, 100% { transform: translate(0px, 0px); opacity: 1; } 35% { transform: translate(64px, 16px); opacity: 0.9; } 50% { transform: translate(16px, -48px); opacity: 0.4; } 65% { transform: translate(-16px, -64px); opacity: 0.5; } }
+      @keyframes b13{ 0%, 15%, 85%, 100% { transform: translate(0px, 0px); opacity: 1; } 35% { transform: translate(32px, -32px); opacity: 0.7; } 50% { transform: translate(-16px, -64px); opacity: 0.5; } 65% { transform: translate(-48px, -32px); opacity: 0.9; } }
+      @keyframes b14{ 0%, 15%, 85%, 100% { transform: translate(0px, 0px); opacity: 1; } 35% { transform: translate(16px, -16px); opacity: 0.5; } 50% { transform: translate(64px, -32px); opacity: 0.9; } 65% { transform: translate(32px, -64px); opacity: 0.6; } }
+    </style>
+
+    <!-- True Neon Blue Gradient -->
+    <linearGradient id="neonGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00ffff" />
+      <stop offset="50%" stop-color="#0088ff" />
+      <stop offset="100%" stop-color="#001eff" />
+    </linearGradient>
+
+    <!-- Complex Filter: Strong Neon Glow + Masked Noise -->
+    <filter id="neonNoiseGlow" x="-80%" y="-80%" width="260%" height="260%">
+      
+      <!-- Strong Outer and Inner Glow Layers -->
+      <feDropShadow dx="0" dy="0" stdDeviation="4" flood-color="#00ffff" flood-opacity="0.8" result="glow1" />
+      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="#0088ff" flood-opacity="0.6" result="glow2" />
+      <feDropShadow dx="0" dy="0" stdDeviation="24" flood-color="#0055ff" flood-opacity="0.4" result="glow3" />
+      <feDropShadow dx="0" dy="0" stdDeviation="48" flood-color="#0022ff" flood-opacity="0.2" result="glow4" />
+      
+      <!-- Combine Glows -->
+      <feMerge result="allGlows">
+        <feMergeNode in="glow4" />
+        <feMergeNode in="glow3" />
+        <feMergeNode in="glow2" />
+        <feMergeNode in="glow1" />
+      </feMerge>
+
+      <!-- Generate Noise -->
+      <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="4" stitchTiles="stitch" result="noise" />
+      <feColorMatrix type="matrix" values="1 0 0 0 0   0 1 0 0 0   0 0 1 0 0  0 0 0 0.3 0" in="noise" result="coloredNoise" />
+      
+      <!-- Mask Noise so it only appears ON the blocks, not on the transparent background -->
+      <feComposite in="coloredNoise" in2="SourceGraphic" operator="in" result="maskedNoise" />
+      
+      <!-- Blend Noise with the Original shapes -->
+      <feBlend in="maskedNoise" in2="SourceGraphic" mode="overlay" result="texturedShape" />
+
+      <!-- Render Glows UNDER the Textured Shape -->
+      <feMerge>
+        <feMergeNode in="allGlows" />
+        <feMergeNode in="texturedShape" />
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Wrapping in anchor tag to make it fully clickable -->
+  <a href="#" aria-label="Blitz Logo Loading" style="cursor: pointer; outline: none;">
+    <g fill="url(#neonGradient)" filter="url(#neonNoiseGlow)">
+      
+      <!-- Lightning Stem / Zig-Zagging Downward -->
+      <rect class="block blk1" x="96" y="40" width="32" height="16" />
+      <rect class="block blk2" x="80" y="56" width="32" height="16" />
+      <rect class="block blk3" x="64" y="72" width="32" height="16" />
+      
+      <!-- Top of loop branching right -->
+      <rect class="block blk4" x="112" y="88" width="64" height="16" />
+      
+      <!-- Left Lightning Stem continuous + Right edge of 'b' loop -->
+      <rect class="block blk5" x="96" y="104" width="32" height="16" />
+      <rect class="block blk6" x="160" y="104" width="32" height="16" />
+      
+      <rect class="block blk7" x="80" y="120" width="32" height="16" />
+      <rect class="block blk8" x="160" y="120" width="32" height="16" />
+      
+      <rect class="block blk9" x="64" y="136" width="32" height="16" />
+      <rect class="block blk10" x="160" y="136" width="32" height="16" />
+      
+      <!-- Bottom of 'b' loop closing inwards -->
+      <rect class="block blk11" x="96" y="152" width="80" height="16" />
+      
+      <!-- Lightning Bolt ending sharp -->
+      <rect class="block blk12" x="80" y="168" width="32" height="16" />
+      <rect class="block blk13" x="64" y="184" width="32" height="16" />
+      <rect class="block blk14" x="64" y="200" width="16" height="16" />
+
+    </g>
+  </a>
+</svg>

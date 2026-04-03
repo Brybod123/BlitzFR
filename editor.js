@@ -17,8 +17,10 @@ const btnRestoreEditorPane = document.getElementById('btn-restore-editor-pane');
 const saveBtn = document.querySelector('.save-btn');
 const mobileEditorNavBtns = document.querySelectorAll('.mobile-editor-nav-btn');
 const hostedPublishApiBase = 'https://terminal.bookitreal.workers.dev';
+const loadingAssetPath = 'loading.svg';
 let editorPaneTransitionTimer = null;
 let mobileEditorMode = 'code';
+const saveButtonDefaultHtml = saveBtn ? saveBtn.innerHTML : 'PUBLISH';
 
 let chatMessages = [
     {
@@ -263,6 +265,7 @@ function updateSaveButtonState() {
 
     if (!currentUser) {
         saveBtn.disabled = false;
+        saveBtn.classList.remove('loading');
         saveBtn.textContent = 'SIGN IN';
         saveBtn.style.opacity = '1';
         saveBtn.style.cursor = 'pointer';
@@ -271,6 +274,7 @@ function updateSaveButtonState() {
 
     if (currentProjectId && currentProjectOwnerUid && currentProjectOwnerUid !== currentUser.uid) {
         saveBtn.disabled = true;
+        saveBtn.classList.remove('loading');
         saveBtn.textContent = 'READ ONLY';
         saveBtn.style.opacity = '0.45';
         saveBtn.style.cursor = 'not-allowed';
@@ -278,9 +282,48 @@ function updateSaveButtonState() {
     }
 
     saveBtn.disabled = false;
+    saveBtn.classList.remove('loading');
     saveBtn.textContent = 'PUBLISH';
     saveBtn.style.opacity = '1';
     saveBtn.style.cursor = 'pointer';
+}
+
+function createLoadingImage(label = 'Loading') {
+    const img = document.createElement('img');
+    img.src = loadingAssetPath;
+    img.alt = label;
+    img.className = 'loading-mark';
+    return img;
+}
+
+function setGenerateButtonLoading(isLoading) {
+    generateBtn.disabled = isLoading;
+    if (isLoading) {
+        generateBtn.innerHTML = `<img src="${loadingAssetPath}" alt="Generating" class="loading-mark">`;
+        generateBtn.setAttribute('aria-label', 'Generating');
+    } else {
+        generateBtn.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+        `;
+        generateBtn.setAttribute('aria-label', 'Send prompt');
+    }
+}
+
+function setSaveButtonLoading(isLoading, label = 'Publishing') {
+    if (!saveBtn) return;
+    if (isLoading) {
+        saveBtn.disabled = true;
+        saveBtn.classList.add('loading');
+        saveBtn.innerHTML = `<img src="${loadingAssetPath}" alt="${label}" class="loading-mark"><span>${label}</span>`;
+        saveBtn.style.opacity = '1';
+        saveBtn.style.cursor = 'wait';
+        return;
+    }
+
+    saveBtn.classList.remove('loading');
+    saveBtn.innerHTML = saveButtonDefaultHtml;
+    saveBtn.disabled = false;
+    updateSaveButtonState();
 }
 
 window.addEventListener('firebase-auth-ready', () => {
@@ -684,17 +727,17 @@ generateBtn.addEventListener('click', async () => {
     aiAvatar.className = 'chat-avatar';
     aiAvatar.textContent = 'AI';
     const aiBubble = document.createElement('div');
-    aiBubble.className = 'chat-bubble';
-    aiBubble.textContent = 'Generating your request...';
+    aiBubble.className = 'chat-bubble loading-bubble';
+    aiBubble.append(createLoadingImage('Generating response'), document.createTextNode('Generating your request...'));
     aiMsg.append(aiAvatar, aiBubble);
     chatHistory.appendChild(aiMsg);
     chatHistory.scrollTop = chatHistory.scrollHeight;
 
-    generateBtn.disabled = true;
+    setGenerateButtonLoading(true);
     const bubble = aiBubble;
 
     await runChatLoop(bubble);
-    generateBtn.disabled = false;
+    setGenerateButtonLoading(false);
 });
 
 async function runChatLoop(bubble, turn = 1) {
@@ -1193,14 +1236,10 @@ function createToolCard(text, isDone, type, path, diffData) {
             }
         });
     } else {
-        const spinner = document.createElement('div');
-        spinner.className = 'status-spinner';
-        spinner.style.width = '14px';
-        spinner.style.height = '14px';
-        spinner.style.border = '2px solid rgba(74, 144, 226, 0.2)';
-        spinner.style.borderTopColor = '#4a90e2';
-        spinner.style.borderRadius = '50%';
-        spinner.style.animation = 'spin 0.8s linear infinite';
+        const spinner = document.createElement('img');
+        spinner.className = 'status-loading-icon';
+        spinner.src = loadingAssetPath;
+        spinner.alt = 'Loading';
         const label = document.createElement('span');
         label.style.fontSize = '13px';
         label.style.color = '#e2e8f0';
@@ -1540,57 +1579,52 @@ async function saveProject() {
     const projectName = prompt("Project name:", "My Blitz Project");
     if (!projectName) return;
 
-    const thumbnail = await captureThumbnail(projectName);
-    console.log('[thumbnail] save payload thumbnail result', thumbnail ? { length: thumbnail.length } : null);
-    const hostedSlug = currentHostedSlug || slugifyProjectName(projectName);
-    const publishPayload = {
-        slug: hostedSlug,
-        title: projectName,
-        entry: 'index.html',
-        files: buildPublishFilesPayload()
-    };
-
-    let publishResponse;
     try {
-        publishResponse = await fetch(`${hostedPublishApiBase.replace(/\/$/, '')}/api/publish`, {
+        setSaveButtonLoading(true, 'Publishing');
+        const thumbnail = await captureThumbnail(projectName);
+        console.log('[thumbnail] save payload thumbnail result', thumbnail ? { length: thumbnail.length } : null);
+        const hostedSlug = currentHostedSlug || slugifyProjectName(projectName);
+        const publishPayload = {
+            slug: hostedSlug,
+            title: projectName,
+            entry: 'index.html',
+            files: buildPublishFilesPayload()
+        };
+
+        const publishResponse = await fetch(`${hostedPublishApiBase.replace(/\/$/, '')}/api/publish`, {
             method: 'POST',
             headers: { 'content-type': 'application/json' },
             body: JSON.stringify(publishPayload)
         });
-    } catch (error) {
-        console.error("Publish request failed:", error);
-        alert("Publish failed: " + error.message);
-        return;
-    }
 
-    if (!publishResponse.ok) {
-        const errorText = await publishResponse.text().catch(() => '');
-        console.error("Publish failed:", publishResponse.status, errorText);
-        alert(`Publish failed: ${errorText || publishResponse.statusText}`);
-        return;
-    }
+        if (!publishResponse.ok) {
+            const errorText = await publishResponse.text().catch(() => '');
+            console.error("Publish failed:", publishResponse.status, errorText);
+            alert(`Publish failed: ${errorText || publishResponse.statusText}`);
+            return;
+        }
 
-    const publishData = await publishResponse.json().catch(() => ({}));
-    const hostedWebsite = publishData.url || getHostedProjectUrl(hostedSlug);
+        setSaveButtonLoading(true, 'Hosting');
+        const publishData = await publishResponse.json().catch(() => ({}));
+        const hostedWebsite = publishData.url || getHostedProjectUrl(hostedSlug);
 
-    const projectPayload = {
-        name: projectName,
-        hostedSlug,
-        hostedWebsite,
-        ownerDisplayName: currentUser.displayName || currentUser.email || currentUser.uid,
-        ownerPhotoURL: currentUser.photoURL || '',
-        thumbnail,
-        updatedAt: Date.now(),
-        forkedFrom: forkSourceProject,
-        ownerUid: currentUser.uid
-    };
-    console.log('[thumbnail] project payload prepared', {
-        projectName,
-        hasThumbnail: Boolean(thumbnail),
-        payloadKeys: Object.keys(projectPayload)
-    });
+        const projectPayload = {
+            name: projectName,
+            hostedSlug,
+            hostedWebsite,
+            ownerDisplayName: currentUser.displayName || currentUser.email || currentUser.uid,
+            ownerPhotoURL: currentUser.photoURL || '',
+            thumbnail,
+            updatedAt: Date.now(),
+            forkedFrom: forkSourceProject,
+            ownerUid: currentUser.uid
+        };
+        console.log('[thumbnail] project payload prepared', {
+            projectName,
+            hasThumbnail: Boolean(thumbnail),
+            payloadKeys: Object.keys(projectPayload)
+        });
 
-    try {
         let projectRef;
         if (currentProjectId) {
             // Update existing project
@@ -1618,6 +1652,8 @@ async function saveProject() {
     } catch (e) {
         console.error("Save failed:", e);
         alert("Save failed: " + e.message);
+    } finally {
+        setSaveButtonLoading(false);
     }
 }
 
