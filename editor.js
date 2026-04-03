@@ -204,6 +204,12 @@ function setPreviewMode(mode, source = 'user') {
 
 window.switch_preview_mode = (mode) => setPreviewMode(mode, 'ai');
 
+previewModeBtns.forEach((btn) => {
+    btn.addEventListener('click', () => {
+        setPreviewMode(btn.dataset.previewMode || 'html');
+    });
+});
+
 async function loadPyodideRuntime() {
     if (pyodideInstance) return pyodideInstance;
     if (!pyodideLoadingPromise) {
