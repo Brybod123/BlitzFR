@@ -324,6 +324,22 @@ function runPaletteCommand(id) {
             }
             closeCommandPalette();
         },
+        'save-check': () => {
+            const name = prompt('Checkpoint name:', `Checkpoint ${new Date().toLocaleString()}`);
+            if (name === null) return closeCommandPalette();
+            alert(saveCheckpoint(name));
+            closeCommandPalette();
+        },
+        'load-check': () => {
+            const name = prompt('Load checkpoint name (leave blank for latest):', '');
+            if (name === null) return closeCommandPalette();
+            alert(loadCheckpoint(name));
+            closeCommandPalette();
+        },
+        'list-checks': () => {
+            alert(listCheckpoints());
+            closeCommandPalette();
+        },
         'publish-project': () => {
             saveBtn?.click();
             closeCommandPalette();
@@ -370,6 +386,9 @@ function renderCommandPalette(query = '') {
         { id: 'run-python', title: 'Run Python', hint: 'Execute the active .py file' },
         { id: 'clear-python', title: 'Clear Python', hint: 'Clear the Python terminal' },
         { id: 'show-help', title: 'Python Help', hint: 'Show terminal commands' },
+        { id: 'save-check', title: 'Save Checkpoint', hint: 'Save a project snapshot' },
+        { id: 'load-check', title: 'Load Checkpoint', hint: 'Restore a saved snapshot' },
+        { id: 'list-checks', title: 'List Checkpoints', hint: 'See saved snapshots' },
         { id: 'new-file', title: 'New File', hint: 'Create a new file' },
         { id: 'toggle-file-explorer', title: 'Toggle Files', hint: 'Show or hide the file explorer' },
         { id: 'close-file-explorer', title: 'Hide Files', hint: 'Close the file explorer if open' },
@@ -2186,6 +2205,111 @@ function serializeFiles() {
         };
     }
     return out;
+}
+
+function getCheckpointStorageKey() {
+    return `blitz.checkpoints.${currentProjectId || 'local'}`;
+}
+
+function readCheckpointIndex() {
+    try {
+        return JSON.parse(localStorage.getItem(getCheckpointStorageKey()) || '[]');
+    } catch {
+        return [];
+    }
+}
+
+function writeCheckpointIndex(index) {
+    localStorage.setItem(getCheckpointStorageKey(), JSON.stringify(index));
+}
+
+function serializeEditorState() {
+    return {
+        files: serializeFiles(),
+        activeFile,
+        currentPreviewPage,
+        previewMode,
+        timestamp: Date.now()
+    };
+}
+
+function loadEditorState(snapshot) {
+    if (!snapshot?.files) return false;
+
+    for (const name in files) {
+        files[name].model.dispose();
+        delete files[name];
+    }
+
+    for (const [encodedName, fileInfo] of Object.entries(snapshot.files)) {
+        const name = decodeKey(encodedName);
+        const lang = fileInfo.lang || 'plaintext';
+        files[name] = {
+            model: monaco.editor.createModel(fileInfo.content || '', lang, monaco.Uri.file(name)),
+            lang
+        };
+        bindContentChange(files[name].model);
+    }
+
+    activeFile = files[snapshot.activeFile] ? snapshot.activeFile : (Object.keys(files)[0] || 'index.html');
+    currentPreviewPage = files[snapshot.currentPreviewPage] ? snapshot.currentPreviewPage : currentPreviewPage;
+    if (files[activeFile]) editor.setModel(files[activeFile].model);
+    renderFiles();
+    updatePreview();
+    if (snapshot.previewMode === 'python') {
+        setPreviewMode('python');
+    } else {
+        setPreviewMode('html');
+    }
+    return true;
+}
+
+function saveCheckpoint(name = '') {
+    const label = String(name || '').trim() || new Date().toLocaleString();
+    const index = readCheckpointIndex();
+    const snapshot = {
+        name: label,
+        state: serializeEditorState()
+    };
+
+    index.unshift({
+        name: label,
+        timestamp: snapshot.state.timestamp
+    });
+
+    localStorage.setItem(`${getCheckpointStorageKey()}.${encodeURIComponent(label)}`, JSON.stringify(snapshot));
+    writeCheckpointIndex(index.slice(0, 20));
+    return `Saved checkpoint "${label}"`;
+}
+
+function listCheckpoints() {
+    const index = readCheckpointIndex();
+    if (!index.length) return 'No checkpoints saved yet.';
+    return index.map((item, i) => `${i + 1}. ${item.name}`).join('\n');
+}
+
+function loadCheckpoint(name = '') {
+    const index = readCheckpointIndex();
+    if (!index.length) return 'No checkpoints saved yet.';
+
+    const requested = String(name || '').trim();
+    let entry = null;
+    if (requested) {
+        entry = index.find((item) => item.name.toLowerCase() === requested.toLowerCase()) || null;
+    }
+    if (!entry) entry = index[0];
+    if (!entry) return 'No checkpoints saved yet.';
+
+    const raw = localStorage.getItem(`${getCheckpointStorageKey()}.${encodeURIComponent(entry.name)}`);
+    if (!raw) return `Checkpoint "${entry.name}" is missing.`;
+
+    try {
+        const snapshot = JSON.parse(raw);
+        const ok = loadEditorState(snapshot.state);
+        return ok ? `Loaded checkpoint "${entry.name}"` : `Failed to load checkpoint "${entry.name}"`;
+    } catch (error) {
+        return `Failed to load checkpoint "${entry.name}": ${String(error?.message || error)}`;
+    }
 }
 
 // Save project to Firebase RTDB
