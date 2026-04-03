@@ -201,9 +201,7 @@ body.editor-page {
 
 .preview-mode-switcher {
     position: fixed;
-    right: 86px;
-    bottom: 12px;
-    z-index: 6;
+    position: static;
     display: inline-flex;
     gap: 4px;
     padding: 4px;
@@ -1526,6 +1524,17 @@ body.pane-transitioning .panel-toggle-icon {
     display: flex;
     align-items: center;
     gap: 10px;
+    padding: 4px;
+    background: rgba(7, 11, 18, 0.72);
+    border: 1px solid rgba(0, 136, 255, 0.18);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 18px rgba(0, 0, 0, 0.2);
+    clip-path: polygon(
+        0 8px, 8px 8px, 8px 0,
+        calc(100% - 8px) 0, calc(100% - 8px) 8px, 100% 8px,
+        100% calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) 100%,
+        8px 100%, 8px calc(100% - 8px), 0 calc(100% - 8px)
+    );
 }
 
 .mobile-editor-nav {

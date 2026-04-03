@@ -22,10 +22,6 @@
                 </span>
                 <span class="preview-restore-label">Back to Editor</span>
             </button>
-            <div class="preview-mode-switcher" aria-label="Preview mode switcher">
-                <button class="preview-mode-btn active" data-preview-mode="html" type="button">HTML</button>
-                <button class="preview-mode-btn" data-preview-mode="python" type="button">PY</button>
-            </div>
             <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin"></iframe>
             <div id="python-preview-output" class="python-preview-output hidden" aria-live="polite"></div>
         </div>
@@ -217,6 +213,10 @@
     </div>
 
     <div class="screen-actions">
+        <div class="preview-mode-switcher" aria-label="Preview mode switcher">
+            <button class="preview-mode-btn active" data-preview-mode="html" type="button">HTML</button>
+            <button class="preview-mode-btn" data-preview-mode="python" type="button">PY</button>
+        </div>
         <button class="save-btn">PUBLISH</button>
     </div>
 
