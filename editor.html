@@ -27,11 +27,7 @@
                 <button class="preview-mode-btn" data-preview-mode="python" type="button">Python Output</button>
             </div>
             <iframe id="preview-frame" sandbox="allow-scripts allow-same-origin"></iframe>
-            <div id="python-preview-output" class="python-preview-output hidden" aria-live="polite">
-                <div class="python-preview-empty">
-                    Python output will appear here when you switch preview mode.
-                </div>
-            </div>
+            <div id="python-preview-output" class="python-preview-output hidden" aria-live="polite"></div>
         </div>
 
         <!-- Right Side: Editor -->
@@ -232,6 +228,9 @@
 <!-- Initialize Monaco Editor -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.46.0/min/vs/loader.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm/css/xterm.css">
+    <script src="https://cdn.jsdelivr.net/npm/xterm/lib/xterm.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit/lib/xterm-addon-fit.js"></script>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.26.2/full/pyodide.js"></script>
     <script>
         require.config({ paths: { 'vs': 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.46.0/min/vs' } });

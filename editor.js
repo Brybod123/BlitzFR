@@ -26,6 +26,14 @@ let previewMode = 'html';
 let pyodideInstance = null;
 let pyodideLoadingPromise = null;
 let pythonRunToken = 0;
+let pythonTerminal = null;
+let pythonFitAddon = null;
+let pythonTerminalReady = false;
+let pythonTerminalPrompt = 'py> ';
+let pythonTerminalBuffer = '';
+let pythonTerminalHistory = [];
+let pythonTerminalHistoryIndex = -1;
+let pythonTerminalBusy = false;
 const saveButtonDefaultHtml = saveBtn ? saveBtn.innerHTML : 'PUBLISH';
 
 let chatMessages = [
@@ -36,10 +44,11 @@ You can manipulate files using special tags. Use them only when necessary.
 
 TOOLS:
 0. To switch preview modes: <switch_preview_mode mode="html"/> or <switch_preview_mode mode="python"/>
-1. To read a file: <read_file path="filename"/>
-2. To create/overwrite a file: <write_file path="filename">content</write_file>
-3. To edit a file via search/replace: <edit_file path="filename"><search>exact_text_to_find</search><replace>new_text</replace></edit_file>
-4. To delete a file: <delete_file path="filename"/>
+1. To list files: <list_files/>
+2. To read a file: <read_file path="filename"/>
+3. To create/overwrite a file: <write_file path="filename">content</write_file>
+4. To edit a file via search/replace: <edit_file path="filename"><search>exact_text_to_find</search><replace>new_text</replace></edit_file>
+5. To delete a file: <delete_file path="filename"/>
 
 When editing, the <search> block must exactly match the text in the file.
 You can use multiple tags in one response. Always explain what you are doing.
@@ -182,6 +191,7 @@ function setPreviewMode(mode, source = 'user') {
     if (previewMode === 'python') {
         previewFrame.classList.add('hidden');
         pythonPreviewOutput.classList.remove('hidden');
+        void ensurePythonTerminal();
         void updatePythonPreview();
     } else {
         pythonPreviewOutput.classList.add('hidden');
@@ -208,6 +218,205 @@ async function loadPyodideRuntime() {
     }
     pyodideInstance = await pyodideLoadingPromise;
     return pyodideInstance;
+}
+
+async function ensurePythonTerminal() {
+    if (!pythonPreviewOutput || pythonTerminalReady) return;
+    if (typeof Terminal !== 'function') {
+        pythonPreviewOutput.innerHTML = '<div class="python-preview-empty">xterm.js failed to load.</div>';
+        return;
+    }
+
+    pythonPreviewOutput.innerHTML = `
+        <div class="python-terminal-shell">
+            <div class="python-terminal-toolbar">
+                <div class="python-terminal-title">Python Shell</div>
+                <div class="python-terminal-hint">Commands: <code>run</code>, <code>list</code>, <code>make name.py</code>, <code>remove name.py</code>, <code>help</code></div>
+            </div>
+            <div class="python-terminal-body"><div id="python-terminal-host"></div></div>
+        </div>
+    `;
+
+    const terminalHost = document.getElementById('python-terminal-host');
+    if (!terminalHost) return;
+
+    pythonTerminal = new Terminal({
+        cursorBlink: true,
+        fontFamily: 'ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace',
+        fontSize: 14,
+        theme: {
+            background: '#0b0f14',
+            foreground: '#d8f3ff',
+            cursor: '#00ffff',
+            selectionBackground: 'rgba(0, 136, 255, 0.35)'
+        },
+        allowTransparency: true,
+        convertEol: true
+    });
+
+    if (typeof FitAddon === 'function') {
+        pythonFitAddon = new FitAddon.FitAddon();
+        pythonTerminal.loadAddon(pythonFitAddon);
+    }
+
+    pythonTerminal.open(terminalHost);
+    pythonTerminal.writeln('Blitz Python shell ready.');
+    pythonTerminal.writeln('Type "help" for commands.');
+    pythonTerminal.prompt = () => {
+        pythonTerminal.write(`\r\n${pythonTerminalPrompt}`);
+        pythonTerminalBuffer = '';
+    };
+
+    pythonTerminal.onData(async (data) => {
+        if (pythonTerminalBusy) {
+            return;
+        }
+
+        if (data === '\r') {
+            const command = pythonTerminalBuffer.trim();
+            pythonTerminal.writeln('');
+            pythonTerminalHistoryIndex = -1;
+            if (command) {
+                pythonTerminalHistory.unshift(command);
+            }
+            await handlePythonTerminalCommand(command);
+            pythonTerminal.prompt();
+            return;
+        }
+
+        if (data === '\u001b[A') {
+            if (!pythonTerminalHistory.length) return;
+            pythonTerminalHistoryIndex = Math.min(pythonTerminalHistoryIndex + 1, pythonTerminalHistory.length - 1);
+            pythonTerminalBuffer = pythonTerminalHistory[pythonTerminalHistoryIndex] || '';
+            pythonTerminal.write('\x1b[2K\r' + pythonTerminalPrompt + pythonTerminalBuffer);
+            return;
+        }
+
+        if (data === '\u001b[B') {
+            if (!pythonTerminalHistory.length) return;
+            pythonTerminalHistoryIndex = Math.max(pythonTerminalHistoryIndex - 1, -1);
+            pythonTerminalBuffer = pythonTerminalHistoryIndex >= 0 ? (pythonTerminalHistory[pythonTerminalHistoryIndex] || '') : '';
+            pythonTerminal.write('\x1b[2K\r' + pythonTerminalPrompt + pythonTerminalBuffer);
+            return;
+        }
+
+        if (data === '\u007F') {
+            if (pythonTerminalBuffer.length > 0) {
+                pythonTerminalBuffer = pythonTerminalBuffer.slice(0, -1);
+                pythonTerminal.write('\b \b');
+            }
+            return;
+        }
+
+        if (data >= ' ' || data === '\t') {
+            pythonTerminalBuffer += data;
+            pythonTerminal.write(data);
+        }
+    });
+
+    pythonTerminal.prompt();
+    pythonTerminalReady = true;
+    window.addEventListener('resize', () => pythonFitAddon?.fit?.());
+    setTimeout(() => pythonFitAddon?.fit?.(), 0);
+}
+
+function listVirtualFiles() {
+    return Object.keys(files).sort().map((name) => `${name} (${files[name]?.lang || 'plaintext'})`).join('\n');
+}
+
+function createPythonFile(name) {
+    if (!name) return 'Usage: make filename.py';
+    const filename = name.trim();
+    if (files[filename]) return `File already exists: ${filename}`;
+
+    files[filename] = {
+        model: monaco.editor.createModel('', 'python', monaco.Uri.file(filename)),
+        lang: 'python'
+    };
+    bindContentChange(files[filename].model);
+    renderFiles();
+    updatePreview();
+    return `Created ${filename}`;
+}
+
+function removePythonFile(name) {
+    if (!name) return 'Usage: remove filename.py';
+    const filename = name.trim();
+    if (!files[filename]) return `File not found: ${filename}`;
+    if (Object.keys(files).length <= 1) return 'You must keep at least one file.';
+
+    files[filename].model.dispose();
+    delete files[filename];
+    if (activeFile === filename) {
+        activeFile = Object.keys(files)[0];
+        editor.setModel(files[activeFile].model);
+    }
+    renderFiles();
+    updatePreview();
+    return `Removed ${filename}`;
+}
+
+async function runPythonSource() {
+    const source = getPythonSource();
+    if (!source.trim()) {
+        return 'No Python code found.';
+    }
+
+    const pyodide = await loadPyodideRuntime();
+    const output = [];
+    pyodide.setStdout({ batched: (text) => output.push(text) });
+    pyodide.setStderr({ batched: (text) => output.push(text) });
+
+    try {
+        await pyodide.runPythonAsync(source);
+    } catch (error) {
+        output.push(String(error?.message || error));
+    }
+
+    return output.join('').trim() || 'Python ran successfully.';
+}
+
+async function handlePythonTerminalCommand(command) {
+    const normalized = String(command || '').trim();
+    if (!normalized) {
+        return;
+    }
+
+    const [cmd, ...rest] = normalized.split(/\s+/);
+    const arg = rest.join(' ');
+    pythonTerminalBusy = true;
+
+    try {
+        if (cmd === 'help') {
+            pythonTerminal.writeln('Commands:');
+            pythonTerminal.writeln('  list');
+            pythonTerminal.writeln('  make <filename.py>');
+            pythonTerminal.writeln('  remove <filename.py>');
+            pythonTerminal.writeln('  run');
+            pythonTerminal.writeln('  switch_preview_mode html|python');
+        } else if (cmd === 'list') {
+            const listing = listVirtualFiles();
+            pythonTerminal.writeln(listing || '(no files)');
+        } else if (cmd === 'make') {
+            pythonTerminal.writeln(createPythonFile(arg));
+        } else if (cmd === 'remove') {
+            pythonTerminal.writeln(removePythonFile(arg));
+        } else if (cmd === 'run') {
+            pythonTerminal.writeln('Running Python...');
+            const result = await runPythonSource();
+            pythonTerminal.writeln(result);
+        } else if (cmd === 'switch_preview_mode') {
+            setPreviewMode(arg === 'python' ? 'python' : 'html', 'ai');
+            pythonTerminal.writeln(`Preview mode set to ${previewMode}.`);
+        } else if (cmd === 'clear') {
+            pythonTerminal.clear();
+        } else {
+            pythonTerminal.writeln(`Unknown command: ${cmd}`);
+            pythonTerminal.writeln('Type "help" for commands.');
+        }
+    } finally {
+        pythonTerminalBusy = false;
+    }
 }
 
 function getPythonSource() {
@@ -470,6 +679,7 @@ function buildRenderableHtml(pageToLoad = currentPreviewPage) {
 function buildPublishFilesPayload() {
     const payload = {};
     for (const [filename, fileObj] of Object.entries(files)) {
+        if (fileObj.lang === 'python' || filename.endsWith('.py')) continue;
         payload[filename] = fileObj.model.getValue();
     }
     return payload;
@@ -940,7 +1150,7 @@ function updateAiMessageUI(bubble, content) {
     bubble.innerHTML = '';
 
     // Combined regex for XML-style and Kimi-style tools
-    const regex = /(<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)[^>]*\/>|<(write_file|edit_file|create_file|search_codebase)[^>]*>[\s\S]*?<\/(write_file|edit_file|create_file|search_codebase)>|<\|tool_call_begin\|> functions\.(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check):\d+ <\|tool_call_argument_begin\|> ([\s\S]*?) <\|tool_call_end\|>)|(<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)[^>]*$|<(write_file|edit_file|create_file|search_codebase)[^>]*>[\s\S]*?$|<\|tool_call_begin\|> functions\.(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check):\d+ <\|tool_call_argument_begin\|> [\s\S]*?$)/g;
+    const regex = /(<(switch_preview_mode|list_files|read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)[^>]*\/>|<(write_file|edit_file|create_file|search_codebase)[^>]*>[\s\S]*?<\/(write_file|edit_file|create_file|search_codebase)>|<\|tool_call_begin\|> functions\.(switch_preview_mode|list_files|read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check):\d+ <\|tool_call_argument_begin\|> ([\s\S]*?) <\|tool_call_end\|>)|(<(switch_preview_mode|list_files|read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)[^>]*$|<(write_file|edit_file|create_file|search_codebase)[^>]*>[\s\S]*?$|<\|tool_call_begin\|> functions\.(switch_preview_mode|list_files|read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check):\d+ <\|tool_call_argument_begin\|> [\s\S]*?$)/g;
 
     let lastIndex = 0;
     let match;
@@ -974,7 +1184,7 @@ function updateAiMessageUI(bubble, content) {
             }
         } else {
             // XML style
-            const typeMatch = fullMatch.match(/<(read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)/);
+            const typeMatch = fullMatch.match(/<(switch_preview_mode|list_files|read_file|write_file|edit_file|delete_file|create_file|read_codebase|search_codebase|todo_add|todo_read|todo_check)/);
             type = typeMatch ? typeMatch[1] : "tool";
             const pathMatch = fullMatch.match(/path="([^"]+)"/);
             const taskMatch = fullMatch.match(/task="([^"]+)"/);
@@ -988,6 +1198,8 @@ function updateAiMessageUI(bubble, content) {
         }
 
         const labelMap = {
+            'switch_preview_mode': 'Switching Preview: ',
+            'list_files': 'Listing Files',
             'read_file': 'Reading ',
             'write_file': 'Writing ',
             'create_file': 'Creating ',
@@ -1000,6 +1212,8 @@ function updateAiMessageUI(bubble, content) {
             'todo_check': 'Checking To-Do: '
         };
         const doneMap = {
+            'switch_preview_mode': 'Switched Preview: ',
+            'list_files': 'Files Listed',
             'read_file': 'Read ',
             'write_file': 'Updated ',
             'create_file': 'Created ',
@@ -1391,12 +1605,17 @@ function executeAiTools(content) {
         if (type === 'read_file' && args.path && files[args.path]) {
             chatMessages.push({ role: 'system', content: `Content of ${args.path}:\n${files[args.path].model.getValue()}` });
             contextAdded = true;
+        } else if (type === 'list_files') {
+            chatMessages.push({ role: 'system', content: `Current files in project:\n${listVirtualFiles() || '(no files)'}` });
+            contextAdded = true;
         } else if ((type === 'write_file' || type === 'create_file') && args.path) {
             aiCreateFile(args.path, args.content || "");
         } else if (type === 'edit_file' && args.path) {
             applyFileEdit(args.path, args.search, args.replace);
         } else if (type === 'delete_file' && args.path) {
             if (files[args.path]) deleteFile(args.path);
+        } else if (type === 'switch_preview_mode' && args.mode) {
+            setPreviewMode(args.mode === 'python' ? 'python' : 'html', 'ai');
         } else if (type === 'todo_add' && args.task) {
             todos.push({ task: args.task, done: false });
         } else if (type === 'todo_check' && args.task) {
@@ -1451,6 +1670,17 @@ function executeAiTools(content) {
             chatMessages.push({ role: 'system', content: `Content of ${path}:\n${fileData}` });
             contextAdded = true;
         }
+    }
+
+    const listMatches = content.matchAll(/<list_files\/>/g);
+    for (const _match of listMatches) {
+        chatMessages.push({ role: 'system', content: `Current files in project:\n${listVirtualFiles() || '(no files)'}` });
+        contextAdded = true;
+    }
+
+    const switchMatches = content.matchAll(/<switch_preview_mode mode="([^"]+)"\/>/g);
+    for (const match of switchMatches) {
+        setPreviewMode(match[1] === 'python' ? 'python' : 'html', 'ai');
     }
 
     // Create/Write Files

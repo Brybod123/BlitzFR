@@ -241,9 +241,51 @@ body.editor-page {
 .python-preview-output {
     flex: 1;
     overflow: auto;
-    padding: 72px 20px 20px;
+    padding: 0;
     background: #0b0f14;
     color: #d8f3ff;
+}
+
+.python-terminal-shell {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.python-terminal-toolbar {
+    flex: 0 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(0, 136, 255, 0.2);
+    background: rgba(9, 14, 21, 0.88);
+}
+
+.python-terminal-title {
+    font-family: 'VT323', monospace;
+    font-size: 24px;
+    color: #8fdcff;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.python-terminal-hint {
+    font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    color: #8aa4b8;
+    font-size: 12px;
+}
+
+.python-terminal-body {
+    flex: 1;
+    min-height: 0;
+    padding: 12px;
+}
+
+.python-terminal-body .xterm {
+    height: 100%;
 }
 
 .python-preview-empty,
