@@ -34,6 +34,89 @@ function cleanupSuggestion(text, beforeCursor = '') {
     return suggestion.replace(/^\n{3,}/, '\n\n');
 }
 
+function getIndentation(beforeCursor = '') {
+    const currentLine = beforeCursor.split('\n').pop() || '';
+    const indentMatch = currentLine.match(/^\s*/);
+    return indentMatch ? indentMatch[0] : '';
+}
+
+function buildFallbackSuggestion(language, beforeCursor = '', afterCursor = '') {
+    const trimmed = beforeCursor.trimEnd();
+    const indent = getIndentation(beforeCursor);
+    const currentLine = beforeCursor.split('\n').pop() || '';
+    const nextIndent = `${indent}    `;
+
+    if (language === 'html') {
+        const openTagMatch = trimmed.match(/<([a-zA-Z][\w-]*)[^>]*>$/);
+        if (openTagMatch && !trimmed.endsWith('/>')) {
+            const tag = openTagMatch[1];
+            if (!afterCursor.includes(`</${tag}>`)) {
+                return `\n${nextIndent}\n${indent}</${tag}>`;
+            }
+        }
+        if (/<[a-zA-Z][\w-]*$/.test(currentLine)) {
+            return '></' + currentLine.replace(/^.*<([a-zA-Z][\w-]*)$/, '$1') + '>';
+        }
+    }
+
+    if (language === 'css') {
+        if (/\{\s*$/.test(trimmed)) {
+            return `\n${nextIndent}\n${indent}}`;
+        }
+        if (/:\s*$/.test(currentLine)) {
+            return ';';
+        }
+    }
+
+    if (language === 'javascript') {
+        if (/\{\s*$/.test(trimmed)) {
+            return `\n${nextIndent}\n${indent}}`;
+        }
+        if (/\(\s*$/.test(trimmed)) {
+            return ')';
+        }
+        if (/=\s*$/.test(currentLine)) {
+            return ' ';
+        }
+        if (/\b(return|await|const|let)\s+$/.test(currentLine)) {
+            return '';
+        }
+    }
+
+    return '';
+}
+
+function extractTextParts(value) {
+    if (!value) return [];
+    if (typeof value === 'string') return [value];
+    if (Array.isArray(value)) {
+        return value.flatMap((item) => {
+            if (!item) return [];
+            if (typeof item === 'string') return [item];
+            if (typeof item.text === 'string') return [item.text];
+            if (typeof item.content === 'string') return [item.content];
+            return [];
+        });
+    }
+    if (typeof value.text === 'string') return [value.text];
+    if (typeof value.content === 'string') return [value.content];
+    return [];
+}
+
+function extractSuggestionText(data) {
+    const choice = data?.choices?.[0] || {};
+    const message = choice?.message || {};
+
+    const parts = [
+        ...extractTextParts(message.content),
+        ...extractTextParts(choice.text),
+        ...extractTextParts(data?.output_text),
+        ...extractTextParts(data?.response?.output_text)
+    ].map((part) => String(part || '').trim()).filter(Boolean);
+
+    return parts.join('\n').trim();
+}
+
 export default async (req) => {
     if (req.method !== 'POST') {
         return new Response('Method Not Allowed', { status: 405 });
@@ -117,8 +200,8 @@ export default async (req) => {
         }
 
         const data = await response.json();
-        const rawSuggestion = data?.choices?.[0]?.message?.content || '';
-        const suggestion = cleanupSuggestion(rawSuggestion, beforeCursor);
+        const rawSuggestion = extractSuggestionText(data);
+        const suggestion = cleanupSuggestion(rawSuggestion, beforeCursor) || buildFallbackSuggestion(language, beforeCursor, afterCursor);
         return json({ suggestion });
     } catch (error) {
         console.error('Suggestion fetch failed:', error);
