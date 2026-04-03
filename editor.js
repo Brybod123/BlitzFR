@@ -185,6 +185,11 @@ function setMobileEditorMode(mode) {
     document.body.classList.remove('mobile-editor-mode-code', 'mobile-editor-mode-preview', 'mobile-editor-mode-ai');
     document.body.classList.add(`mobile-editor-mode-${mobileEditorMode}`);
 
+    if (!fileExplorer.classList.contains('hidden')) {
+        fileExplorer.classList.add('hidden');
+        btnFileExplorer.classList.remove('active');
+    }
+
     mobileEditorNavBtns.forEach((btn) => {
         btn.classList.toggle('active', btn.dataset.mobilePanel === mobileEditorMode);
     });
@@ -528,6 +533,14 @@ btnFileExplorer.addEventListener('click', () => {
     fileExplorer.classList.toggle('hidden');
     btnFileExplorer.classList.toggle('active');
     setTimeout(() => editor.layout(), 0);
+});
+
+document.addEventListener('click', (event) => {
+    if (!mobileEditorQuery.matches) return;
+    if (fileExplorer.classList.contains('hidden')) return;
+    if (fileExplorer.contains(event.target) || btnFileExplorer.contains(event.target)) return;
+    fileExplorer.classList.add('hidden');
+    btnFileExplorer.classList.remove('active');
 });
 
 btnToggleEditorPane.addEventListener('click', () => {
