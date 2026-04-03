@@ -35,6 +35,7 @@ let pythonTerminalHistory = [];
 let pythonTerminalHistoryIndex = -1;
 let pythonTerminalBusy = false;
 let pythonTerminalMinimized = true;
+let pythonTerminalExpanded = false;
 const saveButtonDefaultHtml = saveBtn ? saveBtn.innerHTML : 'PUBLISH';
 
 let chatMessages = [
@@ -193,6 +194,7 @@ function setPreviewMode(mode, source = 'user') {
         pythonPreviewOutput.classList.remove('hidden');
         previewSide.classList.add('python-overlay-open');
         pythonPreviewOutput.classList.toggle('is-minimized', pythonTerminalMinimized);
+        pythonPreviewOutput.classList.toggle('is-expanded', pythonTerminalExpanded);
         void ensurePythonTerminal();
         void updatePythonPreview();
     } else {
@@ -240,10 +242,11 @@ async function ensurePythonTerminal() {
             <div class="python-terminal-toolbar">
                 <div class="python-terminal-title">Python Shell</div>
                 <div class="python-terminal-actions">
+                    <button class="python-terminal-action" data-python-action="expand" type="button">Expand</button>
                     <button class="python-terminal-action" data-python-action="run" type="button">Run</button>
                     <button class="python-terminal-action" data-python-action="list" type="button">List</button>
                     <button class="python-terminal-action" data-python-action="clear" type="button">Clear</button>
-                    <button class="python-terminal-action" data-python-action="close" type="button">Hide</button>
+                    <button class="python-terminal-action" data-python-action="close" type="button">Dock</button>
                 </div>
             </div>
             <div class="python-terminal-body"><div id="python-terminal-host"></div></div>
@@ -332,9 +335,19 @@ async function ensurePythonTerminal() {
     pythonPreviewOutput.querySelectorAll('[data-python-action]').forEach((btn) => {
         btn.addEventListener('click', async () => {
             const action = btn.dataset.pythonAction;
+            if (action === 'expand') {
+                pythonTerminalExpanded = !pythonTerminalExpanded;
+                pythonTerminalMinimized = false;
+                pythonPreviewOutput.classList.toggle('is-expanded', pythonTerminalExpanded);
+                pythonPreviewOutput.classList.remove('is-minimized');
+                pythonFitAddon?.fit?.();
+                return;
+            }
             if (action === 'close') {
+                pythonTerminalExpanded = false;
                 pythonTerminalMinimized = true;
                 pythonPreviewOutput.classList.add('is-minimized');
+                pythonPreviewOutput.classList.remove('is-expanded');
                 return;
             }
             if (action === 'run') {
