@@ -134,18 +134,18 @@ export default async (req) => {
     }
 
     const claimKey = `codes/${submittedCode}`;
-    const claimResult = await betaClaimsStore.setJSON(claimKey, {
+    const existingClaim = await betaClaimsStore.get(claimKey, { type: 'json' });
+
+    if (existingClaim) {
+        return json({ error: 'That beta code has already been used.' }, 409);
+    }
+
+    await betaClaimsStore.setJSON(claimKey, {
         code: submittedCode,
         usedAt: new Date().toISOString(),
         uid: String(body?.uid || '').trim(),
         email: String(body?.email || '').trim()
-    }, {
-        onlyIfNew: true
     });
-
-    if (!claimResult?.modified) {
-        return json({ error: 'That beta code has already been used.' }, 409);
-    }
 
     const token = await createToken(signingSecret);
     return json({ enabled: true, granted: true, token });
