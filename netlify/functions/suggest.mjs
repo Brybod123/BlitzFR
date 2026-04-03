@@ -1,4 +1,4 @@
-const SUGGESTION_MODEL = "rekaai/reka-edge";
+const SUGGESTION_MODEL = "qwen/qwen3.6-plus:free";
 
 function readEnv(name) {
     if (typeof process !== 'undefined' && process.env?.[name]) {
@@ -157,11 +157,17 @@ export default async (req) => {
         'Do not explain anything.',
         'Do not use markdown fences.',
         'Do not repeat code that already appears before the cursor unless indentation requires it.',
+        'Be highly pragmatic and code-first.',
+        'Prefer syntactically valid continuations over ambitious ones.',
         'Prefer small, helpful continuations the user can accept in one action.',
         'Match the surrounding style, formatting, and indentation.',
         'Strongly prefer returning a useful continuation instead of an empty response.',
         'If the cursor is inside an unfinished tag, selector, block, function, object, array, or statement, complete that structure.',
         'If you are unsure, return a minimal continuation such as the next line, closing syntax, or the next obvious attribute/property.',
+        'For HTML, prefer valid nested tags, attributes, and closing tags.',
+        'For CSS, prefer valid properties, values, braces, and semicolons.',
+        'For JavaScript, prefer valid expressions, arguments, braces, and statement endings.',
+        'Never return placeholders like TODO, comment explanations, or prose.',
         'Return an empty response only when there is truly no sensible continuation.'
     ].join(' ');
 
