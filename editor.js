@@ -261,16 +261,36 @@ function runPaletteCommand(id) {
             btnNewFile?.click();
             closeCommandPalette();
         },
+        'toggle-file-explorer': () => {
+            btnFileExplorer?.click();
+            closeCommandPalette();
+        },
         'list-files': () => {
             btnFileExplorer?.click();
             closeCommandPalette();
         },
-        'html-preview': () => {
+        'close-file-explorer': () => {
+            if (!fileExplorer.classList.contains('hidden')) {
+                btnFileExplorer?.click();
+            }
+            closeCommandPalette();
+        },
+        'switch-html': () => {
             setPreviewMode('html');
             closeCommandPalette();
         },
-        'python-preview': () => {
+        'switch-python': () => {
             setPreviewMode('python');
+            closeCommandPalette();
+        },
+        'toggle-preview-focus': () => {
+            btnToggleEditorPane?.click();
+            closeCommandPalette();
+        },
+        'close-preview-focus': () => {
+            if (btnRestoreEditorPane?.classList.contains('is-visible')) {
+                btnRestoreEditorPane?.click();
+            }
             closeCommandPalette();
         },
         'run-python': () => {
@@ -289,6 +309,50 @@ function runPaletteCommand(id) {
                 });
             }
             closeCommandPalette();
+        },
+        'clear-python': () => {
+            setPreviewMode('python');
+            if (pythonTerminal) {
+                pythonTerminal.clear();
+            }
+            closeCommandPalette();
+        },
+        'show-help': () => {
+            setPreviewMode('python');
+            if (pythonTerminal) {
+                pythonTerminal.writeln('\r\nCommands: run, list, make, remove, clear, help.');
+            }
+            closeCommandPalette();
+        },
+        'publish-project': () => {
+            saveBtn?.click();
+            closeCommandPalette();
+        },
+        'theme-dark': () => {
+            const btn = document.querySelector('.theme-option[data-theme="dark"]');
+            btn?.click();
+            closeCommandPalette();
+        },
+        'theme-light': () => {
+            const btn = document.querySelector('.theme-option[data-theme="light"]');
+            btn?.click();
+            closeCommandPalette();
+        },
+        'sign-in': () => {
+            document.getElementById('account-trigger')?.click();
+            closeCommandPalette();
+        },
+        'open-dashboard': () => {
+            document.getElementById('account-dashboard-link')?.click();
+            closeCommandPalette();
+        },
+        'save-profile': () => {
+            document.getElementById('account-save-profile')?.click();
+            closeCommandPalette();
+        },
+        'sign-out': () => {
+            document.getElementById('account-sign-out')?.click();
+            closeCommandPalette();
         }
     };
 
@@ -299,13 +363,23 @@ function renderCommandPalette(query = '') {
     const items = [
         { id: 'toggle-code', title: 'Switch to Code', hint: 'Show the code editor' },
         { id: 'toggle-ai', title: 'Switch to AI', hint: 'Open the AI chat panel' },
-        { id: 'focus-preview', title: 'Focus Preview', hint: 'Collapse code and center the preview' },
-        { id: 'html-preview', title: 'HTML Preview', hint: 'Show the browser preview' },
-        { id: 'python-preview', title: 'Python Preview', hint: 'Open the Python runner' },
+        { id: 'toggle-preview-focus', title: 'Focus Preview', hint: 'Collapse code and center the preview' },
+        { id: 'close-preview-focus', title: 'Unfocus Preview', hint: 'Return to split view' },
+        { id: 'switch-html', title: 'HTML Preview', hint: 'Show the browser preview' },
+        { id: 'switch-python', title: 'Python Preview', hint: 'Open the Python runner' },
         { id: 'run-python', title: 'Run Python', hint: 'Execute the active .py file' },
+        { id: 'clear-python', title: 'Clear Python', hint: 'Clear the Python terminal' },
+        { id: 'show-help', title: 'Python Help', hint: 'Show terminal commands' },
         { id: 'new-file', title: 'New File', hint: 'Create a new file' },
-        { id: 'list-files', title: 'File Explorer', hint: 'Toggle the file explorer' },
-        { id: 'publish', title: 'Publish', hint: 'Upload and host the project' }
+        { id: 'toggle-file-explorer', title: 'Toggle Files', hint: 'Show or hide the file explorer' },
+        { id: 'close-file-explorer', title: 'Hide Files', hint: 'Close the file explorer if open' },
+        { id: 'publish-project', title: 'Publish', hint: 'Upload and host the project' },
+        { id: 'theme-dark', title: 'Theme: Blitz', hint: 'Switch to dark Blitz theme' },
+        { id: 'theme-light', title: 'Theme: Light', hint: 'Switch to light theme' },
+        { id: 'sign-in', title: 'Account Menu', hint: 'Open the account menu' },
+        { id: 'open-dashboard', title: 'Open Dashboard', hint: 'Go to your dashboard' },
+        { id: 'save-profile', title: 'Save Profile', hint: 'Save name and photo' },
+        { id: 'sign-out', title: 'Sign Out', hint: 'Sign out of the current account' }
     ];
 
     const filtered = items.filter((item) => {
@@ -336,6 +410,7 @@ window.addEventListener('keydown', (event) => {
     }
 
     if (commandPaletteOpen) {
+        if (isEditableTarget(event.target)) return;
         if (event.key === 'ArrowDown') {
             event.preventDefault();
             commandPaletteActiveIndex = Math.min(commandPaletteActiveIndex + 1, Math.max(commandPaletteItems.length - 1, 0));
