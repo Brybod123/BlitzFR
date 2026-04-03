@@ -157,6 +157,8 @@ body.editor-page {
     border-right: 1px solid rgba(0, 136, 255, 0.2);
     background: #111;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 .preview-side::before {
@@ -182,7 +184,7 @@ body.editor-page {
 
 .preview-side iframe {
     width: 100%;
-    height: 100%;
+    flex: 1;
     border: none;
     background: #fff;
     display: block;
@@ -195,6 +197,71 @@ body.editor-page {
 .preview-side.preview-focused iframe {
     transform: scale(1.012);
     filter: saturate(1.03) contrast(1.01);
+}
+
+.preview-mode-switcher {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 6;
+    display: inline-flex;
+    gap: 8px;
+    padding: 6px;
+    background: rgba(7, 11, 18, 0.86);
+    border: 1px solid rgba(0, 136, 255, 0.24);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    clip-path: polygon(
+        0 8px, 8px 8px, 8px 0,
+        calc(100% - 8px) 0, calc(100% - 8px) 8px, 100% 8px,
+        100% calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) 100%,
+        8px 100%, 8px calc(100% - 8px), 0 calc(100% - 8px)
+    );
+}
+
+.preview-mode-btn {
+    border: 1px solid #23466e;
+    background: transparent;
+    color: #8fdcff;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 8px 12px;
+    cursor: pointer;
+}
+
+.preview-mode-btn.active {
+    background: linear-gradient(180deg, #0e2a44, #0b1b2d);
+    border-color: #00ffff;
+    color: #ffffff;
+    box-shadow: 0 0 14px rgba(0, 255, 255, 0.14);
+}
+
+.python-preview-output {
+    flex: 1;
+    overflow: auto;
+    padding: 72px 20px 20px;
+    background: #0b0f14;
+    color: #d8f3ff;
+}
+
+.python-preview-empty,
+.python-preview-code {
+    font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 15px;
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.python-preview-empty {
+    color: #8ea9bf;
+}
+
+.python-preview-code {
+    margin: 0;
+    color: #d8f3ff;
 }
 
 .preview-restore-btn {

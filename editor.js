@@ -12,6 +12,8 @@ const btnNewFile = document.getElementById('btn-new-file');
 const editorContainer = document.querySelector('.editor-container');
 const editorSide = document.querySelector('.editor-side');
 const previewSide = document.querySelector('.preview-side');
+const previewModeBtns = document.querySelectorAll('.preview-mode-btn');
+const pythonPreviewOutput = document.getElementById('python-preview-output');
 const btnToggleEditorPane = document.getElementById('btn-toggle-editor-pane');
 const btnRestoreEditorPane = document.getElementById('btn-restore-editor-pane');
 const saveBtn = document.querySelector('.save-btn');
@@ -20,6 +22,10 @@ const hostedPublishApiBase = 'https://terminal.bookitreal.workers.dev';
 const loadingAssetPath = 'loading.svg';
 let editorPaneTransitionTimer = null;
 let mobileEditorMode = 'code';
+let previewMode = 'html';
+let pyodideInstance = null;
+let pyodideLoadingPromise = null;
+let pythonRunToken = 0;
 const saveButtonDefaultHtml = saveBtn ? saveBtn.innerHTML : 'PUBLISH';
 
 let chatMessages = [
@@ -29,13 +35,15 @@ let chatMessages = [
 You can manipulate files using special tags. Use them only when necessary.
 
 TOOLS:
+0. To switch preview modes: <switch_preview_mode mode="html"/> or <switch_preview_mode mode="python"/>
 1. To read a file: <read_file path="filename"/>
 2. To create/overwrite a file: <write_file path="filename">content</write_file>
 3. To edit a file via search/replace: <edit_file path="filename"><search>exact_text_to_find</search><replace>new_text</replace></edit_file>
 4. To delete a file: <delete_file path="filename"/>
 
 When editing, the <search> block must exactly match the text in the file.
-You can use multiple tags in one response. Always explain what you are doing.`
+You can use multiple tags in one response. Always explain what you are doing.
+Use Python preview only when the user asks for it or when Python output is the goal.`
     }
 ];
 
@@ -163,6 +171,91 @@ function setEditorPaneCollapsed(collapsed) {
         document.body.classList.remove('pane-transitioning');
         editor.layout();
     }, 420);
+}
+
+function setPreviewMode(mode, source = 'user') {
+    previewMode = mode === 'python' ? 'python' : 'html';
+    previewModeBtns.forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.previewMode === previewMode);
+    });
+
+    if (previewMode === 'python') {
+        previewFrame.classList.add('hidden');
+        pythonPreviewOutput.classList.remove('hidden');
+        void updatePythonPreview();
+    } else {
+        pythonPreviewOutput.classList.add('hidden');
+        previewFrame.classList.remove('hidden');
+        if (source !== 'python-run') {
+            updatePreview();
+        }
+    }
+}
+
+window.switch_preview_mode = (mode) => setPreviewMode(mode, 'ai');
+
+async function loadPyodideRuntime() {
+    if (pyodideInstance) return pyodideInstance;
+    if (!pyodideLoadingPromise) {
+        pyodideLoadingPromise = (async () => {
+            if (typeof loadPyodide !== 'function') {
+                throw new Error('Pyodide is not available.');
+            }
+            const instance = await loadPyodide();
+            await instance.loadPackage([]);
+            return instance;
+        })();
+    }
+    pyodideInstance = await pyodideLoadingPromise;
+    return pyodideInstance;
+}
+
+function getPythonSource() {
+    const activeModel = files[activeFile]?.lang === 'python' ? files[activeFile].model.getValue() : '';
+    if (activeModel.trim()) return activeModel;
+
+    const pythonFile = Object.keys(files).find((filename) => files[filename]?.lang === 'python');
+    if (pythonFile) return files[pythonFile].model.getValue();
+
+    return '';
+}
+
+async function updatePythonPreview() {
+    if (!pythonPreviewOutput) return;
+    const token = ++pythonRunToken;
+    const source = getPythonSource();
+
+    if (!source.trim()) {
+        pythonPreviewOutput.innerHTML = '<div class="python-preview-empty">Add a <code>.py</code> file to run Python here.</div>';
+        return;
+    }
+
+    pythonPreviewOutput.innerHTML = '<div class="python-preview-empty">Running Python...</div>';
+
+    try {
+        const pyodide = await loadPyodideRuntime();
+        if (token !== pythonRunToken) return;
+
+        const output = [];
+        pyodide.setStdout({ batched: (text) => output.push(text) });
+        pyodide.setStderr({ batched: (text) => output.push(text) });
+
+        try {
+            await pyodide.runPythonAsync(source);
+        } catch (error) {
+            output.push(String(error?.message || error));
+        }
+
+        if (token !== pythonRunToken) return;
+
+        const combined = output.join('').trim();
+        pythonPreviewOutput.innerHTML = combined
+            ? `<pre class="python-preview-code">${combined.replace(/[&<>]/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[ch]))}</pre>`
+            : '<div class="python-preview-empty">Python ran successfully, but did not print anything.</div>';
+    } catch (error) {
+        if (token !== pythonRunToken) return;
+        pythonPreviewOutput.innerHTML = `<div class="python-preview-empty">Pyodide failed to load: ${String(error?.message || error)}</div>`;
+    }
 }
 
 function syncMobileEditorLayout() {
@@ -412,6 +505,11 @@ window.addEventListener('message', (e) => {
 // Build Live Preview with multi-page and asset support
 function updatePreview(pageToLoad = currentPreviewPage) {
     try {
+        if (previewMode === 'python') {
+            void updatePythonPreview();
+            return;
+        }
+
         const rendered = buildRenderableHtml(pageToLoad);
         currentPreviewPage = rendered.pageToLoad;
 
@@ -464,9 +562,6 @@ function bindContentChange(model) {
 
 Object.values(files).forEach(f => bindContentChange(f.model));
 updatePreview();
-editor.onDidType(() => {
-    scheduleInlineSuggestionTrigger();
-});
 
 // UI Render Logic
 function renderFiles() {
@@ -1254,6 +1349,12 @@ function createToolCard(text, isDone, type, path, diffData) {
 
 function executeAiTools(content) {
     let contextAdded = false;
+
+    const switchPreviewMatches = content.matchAll(/<switch_preview_mode mode="([^"]+)"\/>/g);
+    for (const match of switchPreviewMatches) {
+        const mode = match[1] === 'python' ? 'python' : 'html';
+        setPreviewMode(mode, 'ai');
+    }
 
     // To-Do Read
     if (content.includes('<todo_read/>')) {
