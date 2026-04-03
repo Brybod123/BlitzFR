@@ -15,8 +15,10 @@ const previewSide = document.querySelector('.preview-side');
 const btnToggleEditorPane = document.getElementById('btn-toggle-editor-pane');
 const btnRestoreEditorPane = document.getElementById('btn-restore-editor-pane');
 const saveBtn = document.querySelector('.save-btn');
+const mobileEditorNavBtns = document.querySelectorAll('.mobile-editor-nav-btn');
 const hostedPublishApiBase = 'https://terminal.bookitreal.workers.dev';
 let editorPaneTransitionTimer = null;
+let mobileEditorMode = 'code';
 
 let chatMessages = [
     {
@@ -163,17 +165,42 @@ function setEditorPaneCollapsed(collapsed) {
 
 function syncMobileEditorLayout() {
     if (!mobileEditorQuery.matches) {
+        document.body.classList.remove('mobile-editor-mode-code', 'mobile-editor-mode-preview', 'mobile-editor-mode-ai');
         btnRestoreEditorPane.classList.remove('is-visible');
         return;
-    }
-
-    if (!editorContainer.classList.contains('editor-collapsed')) {
-        setEditorPaneCollapsed(true);
     }
 
     if (!fileExplorer.classList.contains('hidden')) {
         fileExplorer.classList.add('hidden');
         btnFileExplorer.classList.remove('active');
+    }
+
+    setMobileEditorMode(mobileEditorMode);
+}
+
+function setMobileEditorMode(mode) {
+    if (!mobileEditorQuery.matches) return;
+
+    mobileEditorMode = ['code', 'preview', 'ai'].includes(mode) ? mode : 'code';
+    document.body.classList.remove('mobile-editor-mode-code', 'mobile-editor-mode-preview', 'mobile-editor-mode-ai');
+    document.body.classList.add(`mobile-editor-mode-${mobileEditorMode}`);
+
+    mobileEditorNavBtns.forEach((btn) => {
+        btn.classList.toggle('active', btn.dataset.mobilePanel === mobileEditorMode);
+    });
+
+    btnRestoreEditorPane.classList.toggle('is-visible', mobileEditorMode === 'preview');
+    previewSide.classList.toggle('preview-focused', mobileEditorMode === 'preview');
+
+    if (mobileEditorMode === 'ai') {
+        codeView.classList.add('hidden');
+        aiEditor.classList.remove('hidden');
+        aiEditor.classList.add('active');
+    } else {
+        aiEditor.classList.remove('active');
+        aiEditor.classList.add('hidden');
+        codeView.classList.remove('hidden');
+        window.setTimeout(() => editor.layout(), 0);
     }
 }
 
@@ -504,10 +531,23 @@ btnFileExplorer.addEventListener('click', () => {
 });
 
 btnToggleEditorPane.addEventListener('click', () => {
+    if (mobileEditorQuery.matches) {
+        setMobileEditorMode('preview');
+        return;
+    }
     const nextState = !editorContainer.classList.contains('editor-collapsed');
     setEditorPaneCollapsed(nextState);
 });
-btnRestoreEditorPane.addEventListener('click', () => setEditorPaneCollapsed(false));
+btnRestoreEditorPane.addEventListener('click', () => {
+    if (mobileEditorQuery.matches) {
+        setMobileEditorMode('code');
+        return;
+    }
+    setEditorPaneCollapsed(false);
+});
+mobileEditorNavBtns.forEach((btn) => {
+    btn.addEventListener('click', () => setMobileEditorMode(btn.dataset.mobilePanel));
+});
 mobileEditorQuery.addEventListener('change', syncMobileEditorLayout);
 window.addEventListener('resize', () => {
     if (!mobileEditorQuery.matches) {
@@ -570,10 +610,12 @@ toggleBtns.forEach(btn => {
             codeView.classList.add('hidden');
             aiEditor.classList.remove('hidden');
             aiEditor.classList.add('active');
+            if (mobileEditorQuery.matches) setMobileEditorMode('ai');
         } else {
             aiEditor.classList.remove('active');
             aiEditor.classList.add('hidden');
             codeView.classList.remove('hidden');
+            if (mobileEditorQuery.matches) setMobileEditorMode('code');
             setTimeout(() => editor.layout(), 0);
         }
     });

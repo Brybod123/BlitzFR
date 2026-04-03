@@ -1356,6 +1356,10 @@ body.pane-transitioning .panel-toggle-icon {
     border-color: #4a5568;
 }
 
+.mobile-editor-nav {
+    display: none;
+}
+
 .publish-btn {
     background: #4a90e2;
     color: #ffffff;
@@ -2023,6 +2027,7 @@ body.profile-page .project-card {
         height: auto;
         min-height: 100vh;
         overflow: auto;
+        padding-bottom: 86px;
     }
 
     .editor-container {
@@ -2034,36 +2039,24 @@ body.profile-page .project-card {
 
     .preview-side {
         order: 2;
-        min-height: 46vh;
+        min-height: calc(100dvh - 86px);
         border-right: none;
-        border-top: 1px solid rgba(0, 136, 255, 0.2);
+        border-top: none;
     }
 
     .preview-side iframe {
-        min-height: 46vh;
+        min-height: calc(100dvh - 86px);
     }
 
     .editor-side {
         order: 1;
         padding: 1rem;
         overflow: visible;
+        min-height: calc(100dvh - 86px);
     }
 
     .editor-container.editor-collapsed {
-        display: block;
-    }
-
-    .editor-container.editor-collapsed .preview-side {
-        min-height: 100dvh;
-        border-top: none;
-    }
-
-    .editor-container.editor-collapsed .preview-side iframe {
-        min-height: 100dvh;
-    }
-
-    .editor-container.editor-collapsed .editor-side {
-        display: none;
+        display: flex;
     }
 
     .editor-header {
@@ -2106,8 +2099,32 @@ body.profile-page .project-card {
         border-bottom: 1px solid #232730;
     }
 
+    .editor-main {
+        min-height: clamp(460px, 62dvh, 780px);
+    }
+
     .code-layout {
         flex-direction: column;
+        min-height: 100%;
+    }
+
+    .editor-area,
+    .code-editor-wrapper,
+    #monaco-container {
+        min-height: clamp(420px, 58dvh, 760px);
+    }
+
+    .code-view,
+    .ai-editor {
+        min-height: 100%;
+    }
+
+    .chat-history {
+        min-height: 280px;
+    }
+
+    .chat-input-wrapper {
+        padding-bottom: 4px;
     }
 
     .account-panel {
@@ -2139,6 +2156,97 @@ body.profile-page .project-card {
         width: 100%;
         justify-content: center;
         min-height: 44px;
+    }
+
+    .editor-footer {
+        padding-bottom: 8px;
+    }
+
+    .save-btn {
+        width: 100%;
+    }
+
+    .mobile-editor-nav {
+        position: fixed;
+        left: 12px;
+        right: 12px;
+        bottom: calc(10px + env(safe-area-inset-bottom));
+        z-index: 120;
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        padding: 10px;
+        background: rgba(7, 11, 18, 0.92);
+        border: 2px solid #0088ff;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+        backdrop-filter: blur(10px);
+        clip-path: polygon(
+            0 8px, 8px 8px, 8px 0,
+            calc(100% - 8px) 0, calc(100% - 8px) 8px, 100% 8px,
+            100% calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) 100%,
+            8px 100%, 8px calc(100% - 8px), 0 calc(100% - 8px)
+        );
+    }
+
+    .mobile-editor-nav-btn {
+        min-height: 48px;
+        border: 2px solid #23466e;
+        background: linear-gradient(180deg, #0f1724, #09111c);
+        color: #8fdcff;
+        font-family: 'VT323', monospace;
+        font-size: 22px;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        clip-path: polygon(
+            0 6px, 6px 6px, 6px 0,
+            calc(100% - 6px) 0, calc(100% - 6px) 6px, 100% 6px,
+            100% calc(100% - 6px), calc(100% - 6px) calc(100% - 6px), calc(100% - 6px) 100%,
+            6px 100%, 6px calc(100% - 6px), 0 calc(100% - 6px)
+        );
+    }
+
+    .mobile-editor-nav-btn.active {
+        border-color: #00ffff;
+        background: linear-gradient(180deg, #0e2a44, #0b1b2d);
+        color: #ffffff;
+        box-shadow: 0 0 16px rgba(0, 255, 255, 0.18);
+    }
+
+    body.mobile-editor-mode-code .editor-side {
+        display: flex;
+    }
+
+    body.mobile-editor-mode-code .preview-side,
+    body.mobile-editor-mode-code #ai-editor {
+        display: none;
+    }
+
+    body.mobile-editor-mode-code #code-view {
+        display: flex;
+    }
+
+    body.mobile-editor-mode-preview .editor-side {
+        display: none;
+    }
+
+    body.mobile-editor-mode-preview .preview-side {
+        display: block;
+    }
+
+    body.mobile-editor-mode-ai .preview-side {
+        display: none;
+    }
+
+    body.mobile-editor-mode-ai .editor-side {
+        display: flex;
+    }
+
+    body.mobile-editor-mode-ai #code-view {
+        display: none;
+    }
+
+    body.mobile-editor-mode-ai #ai-editor {
+        display: flex;
     }
 
     .search-bar {
@@ -2295,5 +2403,17 @@ body.profile-page .project-card {
         top: 12px;
         right: 12px;
         padding-right: 10px;
+    }
+
+    .mobile-editor-nav {
+        left: 8px;
+        right: 8px;
+        bottom: calc(8px + env(safe-area-inset-bottom));
+        gap: 8px;
+        padding: 8px;
+    }
+
+    .mobile-editor-nav-btn {
+        font-size: 20px;
     }
 }
