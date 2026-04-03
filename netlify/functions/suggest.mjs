@@ -1,4 +1,4 @@
-const SUGGESTION_MODEL = "liquid/lfm-2.5-1.2b-thinking:free";
+const SUGGESTION_MODEL = "rekaai/reka-edge";
 
 function readEnv(name) {
     if (typeof process !== 'undefined' && process.env?.[name]) {
