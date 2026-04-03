@@ -34,8 +34,6 @@ let pythonTerminalBuffer = '';
 let pythonTerminalHistory = [];
 let pythonTerminalHistoryIndex = -1;
 let pythonTerminalBusy = false;
-let pythonTerminalMinimized = true;
-let pythonTerminalExpanded = false;
 const saveButtonDefaultHtml = saveBtn ? saveBtn.innerHTML : 'PUBLISH';
 
 let chatMessages = [
@@ -191,15 +189,15 @@ function setPreviewMode(mode, source = 'user') {
     });
 
     if (previewMode === 'python') {
+        previewFrame.classList.add('hidden');
         pythonPreviewOutput.classList.remove('hidden');
-        previewSide.classList.add('python-overlay-open');
-        pythonPreviewOutput.classList.toggle('is-minimized', pythonTerminalMinimized);
-        pythonPreviewOutput.classList.toggle('is-expanded', pythonTerminalExpanded);
+        previewSide.classList.add('python-preview-active');
         void ensurePythonTerminal();
         void updatePythonPreview();
     } else {
         pythonPreviewOutput.classList.add('hidden');
-        previewSide.classList.remove('python-overlay-open');
+        previewFrame.classList.remove('hidden');
+        previewSide.classList.remove('python-preview-active');
         if (source !== 'python-run') {
             updatePreview();
         }
@@ -242,11 +240,10 @@ async function ensurePythonTerminal() {
             <div class="python-terminal-toolbar">
                 <div class="python-terminal-title">Python Shell</div>
                 <div class="python-terminal-actions">
-                    <button class="python-terminal-action" data-python-action="expand" type="button">Expand</button>
                     <button class="python-terminal-action" data-python-action="run" type="button">Run</button>
                     <button class="python-terminal-action" data-python-action="list" type="button">List</button>
                     <button class="python-terminal-action" data-python-action="clear" type="button">Clear</button>
-                    <button class="python-terminal-action" data-python-action="close" type="button">Dock</button>
+                    <button class="python-terminal-action" data-python-action="close" type="button">HTML</button>
                 </div>
             </div>
             <div class="python-terminal-body"><div id="python-terminal-host"></div></div>
@@ -335,19 +332,8 @@ async function ensurePythonTerminal() {
     pythonPreviewOutput.querySelectorAll('[data-python-action]').forEach((btn) => {
         btn.addEventListener('click', async () => {
             const action = btn.dataset.pythonAction;
-            if (action === 'expand') {
-                pythonTerminalExpanded = !pythonTerminalExpanded;
-                pythonTerminalMinimized = false;
-                pythonPreviewOutput.classList.toggle('is-expanded', pythonTerminalExpanded);
-                pythonPreviewOutput.classList.remove('is-minimized');
-                pythonFitAddon?.fit?.();
-                return;
-            }
             if (action === 'close') {
-                pythonTerminalExpanded = false;
-                pythonTerminalMinimized = true;
-                pythonPreviewOutput.classList.add('is-minimized');
-                pythonPreviewOutput.classList.remove('is-expanded');
+                setPreviewMode('html');
                 return;
             }
             if (action === 'run') {

@@ -200,9 +200,9 @@ body.editor-page {
 }
 
 .preview-mode-switcher {
-    position: absolute;
-    top: 12px;
-    left: 12px;
+    position: fixed;
+    right: 12px;
+    bottom: 12px;
     z-index: 6;
     display: inline-flex;
     gap: 4px;
@@ -240,10 +240,7 @@ body.editor-page {
 
 .python-preview-output {
     position: absolute;
-    top: 12px;
-    right: 12px;
-    width: min(34vw, 340px);
-    height: 34px;
+    inset: 0;
     overflow: hidden;
     padding: 0;
     background: #0b0f14;
@@ -251,35 +248,8 @@ body.editor-page {
     border: 1px solid rgba(0, 136, 255, 0.2);
     box-shadow: 0 12px 28px rgba(0, 0, 0, 0.28);
     z-index: 7;
-    border-radius: 10px;
-    transform: translateY(0);
-    transition: width 180ms ease, height 180ms ease, transform 180ms ease, opacity 180ms ease;
-}
-
-.python-preview-output.is-minimized {
-    opacity: 0.9;
-    cursor: pointer;
-}
-
-.python-preview-output.is-minimized .python-terminal-shell {
-    display: none;
-}
-
-.python-preview-output.is-minimized::before {
-    content: "PYTHON";
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 100%;
-    color: #8fdcff;
-    font-family: 'VT323', monospace;
-    font-size: 18px;
-    letter-spacing: 0.06em;
-}
-
-.python-preview-output.is-expanded {
-    width: min(42vw, 420px);
-    height: min(48vh, 380px);
+    border-radius: 0;
+    transition: opacity 180ms ease;
 }
 
 .python-terminal-shell {
@@ -295,7 +265,7 @@ body.editor-page {
     justify-content: space-between;
     align-items: center;
     gap: 8px;
-    padding: 8px 10px;
+    padding: 10px 12px;
     border-bottom: 1px solid rgba(0, 136, 255, 0.2);
     background: rgba(9, 14, 21, 0.88);
 }
@@ -332,15 +302,11 @@ body.editor-page {
 .python-terminal-body {
     flex: 1;
     min-height: 0;
-    padding: 6px;
+    padding: 8px;
 }
 
 .python-terminal-body .xterm {
     height: 100%;
-}
-
-.preview-side.python-overlay-open .preview-mode-switcher {
-    background: rgba(7, 11, 18, 0.95);
 }
 
 .python-preview-empty,
@@ -350,6 +316,14 @@ body.editor-page {
     line-height: 1.6;
     white-space: pre-wrap;
     word-break: break-word;
+}
+
+.preview-side.python-preview-active iframe {
+    display: none;
+}
+
+.preview-side.python-preview-active .python-preview-output {
+    display: block;
 }
 
 .python-preview-empty {
