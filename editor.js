@@ -23,6 +23,8 @@ let editorPaneTransitionTimer = null;
 let mobileEditorMode = 'code';
 const saveButtonDefaultHtml = saveBtn ? saveBtn.innerHTML : 'PUBLISH';
 const suggestionCache = new Map();
+const SUGGESTION_COOLDOWN_MS = 2200;
+let lastSuggestionRequestAt = 0;
 
 let chatMessages = [
     {
@@ -393,11 +395,19 @@ inlineLanguages.forEach((languageId) => {
             if (mobileEditorQuery.matches && mobileEditorMode !== 'code') return { items: [] };
             if (codeView.classList.contains('hidden')) return { items: [] };
             if (model !== editor.getModel()) return { items: [] };
+            if (context?.selectedSuggestionInfo) return { items: [] };
 
             const linePrefix = model.getLineContent(position.lineNumber).slice(0, position.column - 1);
             if (!linePrefix.trim()) return { items: [] };
 
+            const cacheKey = getSuggestionCacheKey(model, position);
+            const cached = suggestionCache.get(cacheKey);
+            if (!cached && (Date.now() - lastSuggestionRequestAt) < SUGGESTION_COOLDOWN_MS) {
+                return { items: [] };
+            }
+
             try {
+                lastSuggestionRequestAt = Date.now();
                 const suggestion = await fetchSmartSuggestion(model, position);
                 if (token.isCancellationRequested || !suggestion.trim()) {
                     return { items: [] };

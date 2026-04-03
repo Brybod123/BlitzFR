@@ -69,7 +69,10 @@ export default async (req) => {
         'Do not repeat code that already appears before the cursor unless indentation requires it.',
         'Prefer small, helpful continuations the user can accept in one action.',
         'Match the surrounding style, formatting, and indentation.',
-        'If the best suggestion is nothing, return an empty response.'
+        'Strongly prefer returning a useful continuation instead of an empty response.',
+        'If the cursor is inside an unfinished tag, selector, block, function, object, array, or statement, complete that structure.',
+        'If you are unsure, return a minimal continuation such as the next line, closing syntax, or the next obvious attribute/property.',
+        'Return an empty response only when there is truly no sensible continuation.'
     ].join(' ');
 
     const userPrompt = [
@@ -82,7 +85,8 @@ export default async (req) => {
         'Code after cursor:',
         afterCursor.slice(0, 1200),
         '',
-        'Return only the next code continuation for the cursor.'
+        'Return only the next code continuation for the cursor.',
+        'Keep it brief and directly insertable.'
     ].join('\n');
 
     try {
