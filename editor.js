@@ -25,6 +25,7 @@ const saveButtonDefaultHtml = saveBtn ? saveBtn.innerHTML : 'PUBLISH';
 const suggestionCache = new Map();
 const SUGGESTION_COOLDOWN_MS = 2200;
 let lastSuggestionRequestAt = 0;
+let suggestionTriggerTimer = null;
 
 let chatMessages = [
     {
@@ -382,9 +383,21 @@ async function fetchSmartSuggestion(model, position) {
     }
 
     const data = await response.json();
-    const text = String(data?.suggestion || '');
+    const text = String(data?.suggestion || '').replace(/^\s*\n+/, '\n');
     suggestionCache.set(cacheKey, { text, ts: Date.now() });
     return text;
+}
+
+function scheduleInlineSuggestionTrigger() {
+    if (codeView.classList.contains('hidden')) return;
+    if (mobileEditorQuery.matches && mobileEditorMode !== 'code') return;
+
+    window.clearTimeout(suggestionTriggerTimer);
+    suggestionTriggerTimer = window.setTimeout(() => {
+        if (codeView.classList.contains('hidden')) return;
+        if (mobileEditorQuery.matches && mobileEditorMode !== 'code') return;
+        editor.trigger('blitz-inline-suggest', 'editor.action.inlineSuggest.trigger', {});
+    }, SUGGESTION_COOLDOWN_MS);
 }
 
 const inlineLanguages = ['html', 'css', 'javascript'];
@@ -572,6 +585,9 @@ function bindContentChange(model) {
 
 Object.values(files).forEach(f => bindContentChange(f.model));
 updatePreview();
+editor.onDidChangeModelContent(() => {
+    scheduleInlineSuggestionTrigger();
+});
 
 // UI Render Logic
 function renderFiles() {
